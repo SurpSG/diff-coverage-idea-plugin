@@ -1,4 +1,4 @@
-package com.github.surpsg.diffcoverageideaplugin
+package com.github.surpsg.diffcoverage
 
 import com.intellij.AbstractBundle
 import org.jetbrains.annotations.NonNls

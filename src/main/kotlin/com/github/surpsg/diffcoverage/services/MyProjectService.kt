@@ -1,7 +1,7 @@
-package com.github.surpsg.diffcoverageideaplugin.services
+package com.github.surpsg.diffcoverage.services
 
 import com.intellij.openapi.project.Project
-import com.github.surpsg.diffcoverageideaplugin.MyBundle
+import com.github.surpsg.diffcoverage.MyBundle
 
 class MyProjectService(project: Project) {
 

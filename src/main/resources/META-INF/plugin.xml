@@ -1,6 +1,6 @@
 <idea-plugin>
-    <id>com.github.surpsg.diffcoverageideaplugin</id>
-    <name>diff-coverage-idea-plugin</name>
+    <id>com.github.surpsg.diffcoverage</id>
+    <name>Diff Coverage</name>
     <vendor>surpsg</vendor>
 
     <!-- Product and plugin compatibility requirements -->
@@ -8,12 +8,12 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.surpsg.diffcoverageideaplugin.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.surpsg.diffcoverageideaplugin.services.MyProjectService"/>
+        <applicationService serviceImplementation="com.github.surpsg.diffcoverage.services.MyApplicationService"/>
+        <projectService serviceImplementation="com.github.surpsg.diffcoverage.services.MyProjectService"/>
     </extensions>
 
     <projectListeners>
-        <listener class="com.github.surpsg.diffcoverageideaplugin.listeners.MyProjectManagerListener"
+        <listener class="com.github.surpsg.diffcoverage.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </projectListeners>
 </idea-plugin>
