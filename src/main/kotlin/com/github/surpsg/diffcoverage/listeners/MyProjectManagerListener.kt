@@ -2,11 +2,12 @@ package com.github.surpsg.diffcoverage.listeners
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.openapi.ui.Messages
+import org.jetbrains.plugins.gradle.settings.GradleSettings
+
 
 internal class MyProjectManagerListener : ProjectManagerListener {
 
     override fun projectOpened(project: Project) {
-        Messages.showMessageDialog(project, "yo helo", "I'm title", Messages.getInformationIcon());
+        println("Is gradle project ${GradleSettings.getInstance(project).linkedProjectsSettings.isNotEmpty()}")
     }
 }

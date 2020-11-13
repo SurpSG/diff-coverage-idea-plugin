@@ -6,14 +6,18 @@
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.gradle</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.surpsg.diffcoverage.services.MyApplicationService"/>
         <projectService serviceImplementation="com.github.surpsg.diffcoverage.services.MyProjectService"/>
+
+        <postStartupActivity implementation="com.github.surpsg.diffcoverage.listeners.GradleStartup"/>
     </extensions>
 
     <projectListeners>
         <listener class="com.github.surpsg.diffcoverage.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </projectListeners>
+
 </idea-plugin>
