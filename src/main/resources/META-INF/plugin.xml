@@ -20,4 +20,12 @@
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </projectListeners>
 
+    <actions>
+        <action id="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction"
+                class="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction" text="Diff Coverage"
+                description="Diff coverage">
+            <add-to-group group-id="RunTestGroup" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl D"/>
+        </action>
+    </actions>
 </idea-plugin>
