@@ -4,6 +4,15 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 
+* Create or open gradle project
+* apply and setup diff coverage plugins
+* run diff coverage idea plugin: `ctrl+shift+d`
+
+Diff coverage IDEA plugin does:
+* detects a module to which DiffCoverage Gradle plugin is applied
+* Runs tests
+* Runs `diffCoverage` Gradle task  
+
 ## Template ToDo list
 - [x] Create a new [IntelliJ Platform Plugin Template][template] project.
 - [ ] Verify the [pluginGroup](/gradle.properties), [plugin ID](/src/main/resources/META-INF/plugin.xml) and [sources package](/src/main/kotlin).
