@@ -9,10 +9,10 @@ import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings
 import org.jetbrains.plugins.gradle.util.GradleUtil
 
 @Service
-class GradleDiffCoveragePluginService {
+class GradleDiffCoveragePluginService(private val project: Project) {
 
-    fun lookupDiffCoveragePluginModulePath(project: Project, rootModulePath: String): String? {
-        val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules(project)
+    fun lookupDiffCoveragePluginModulePath(rootModulePath: String): String? {
+        val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
         if (diffCoveragePluginAppliedTo.size > 1 || diffCoveragePluginAppliedTo.first().value.size > 1) {
             return null
         }
@@ -26,7 +26,7 @@ class GradleDiffCoveragePluginService {
             ?.linkedExternalProjectPath
     }
 
-    private fun lookupDiffCoveragePluginModules(project: Project): Map<String, Set<String>> {
+    private fun lookupDiffCoveragePluginModules(): Map<String, Set<String>> {
         val projectsWithDiffCoverPlugin = mutableMapOf<String, MutableSet<String>>()
         for (projectEntry in GradleExtensionsSettings.getInstance(project).projects) {
             for (moduleExtension in projectEntry.value.extensions) {

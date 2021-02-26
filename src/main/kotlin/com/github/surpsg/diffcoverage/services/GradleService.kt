@@ -11,14 +11,13 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 
 @Service
-class GradleService {
+class GradleService(private val project: Project) {
 
-    fun isGradleProject(project: Project): Boolean {
+    fun isGradleProject(): Boolean {
         return !GradleSettings.getInstance(project).linkedProjectsSettings.isEmpty()
     }
 
     fun executeGradleTask(
-        project: Project,
         taskName: String,
         modulePath: String,
         successCallback: () -> Unit

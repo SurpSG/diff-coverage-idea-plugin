@@ -1,8 +1,8 @@
 package com.github.surpsg.diffcoverage.actions
 
 import com.github.surpsg.diffcoverage.services.GradleDiffCoveragePluginService
+import com.github.surpsg.diffcoverage.services.ModifiedCodeService
 import com.github.surpsg.diffcoverage.services.GradleService
-import com.github.surpsg.diffcoverage.services.LocalChangesService
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
@@ -15,33 +15,29 @@ import com.intellij.openapi.ui.Messages
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import java.nio.file.Paths
 
-
 class RunDiffCoverageAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        if (!service<GradleService>().isGradleProject(project)) {
+        if (!project.service<GradleService>().isGradleProject()) {
             Messages.showMessageDialog(project, "" +
                     "Not a Gradle project", "DiffCoverage plugin", Messages.getWarningIcon()
             )
             return
         }
 
-        service<LocalChangesService>().buildPatchCollection(project).forEach {
-            println(it.afterName)
-            it.hunks.forEach {
-
-                println("\t${it.startLineAfter} ${it.endLineAfter}")
+        project.service<ModifiedCodeService>()
+            .collectModifiedCode().forEach {
+                println(it.name)
             }
-        }
 
-        service<GradleService>().apply {
+        project.service<GradleService>().apply {
             val rootModulePath: String = GradleSettings.getInstance(project).linkedProjectsSettings.first().externalProjectPath
-            val diffCoverageModuleAbsolutePath = service<GradleDiffCoveragePluginService>()
-                .lookupDiffCoveragePluginModulePath(project, rootModulePath) ?: return
-            executeGradleTask(project, "test", diffCoverageModuleAbsolutePath) {
-                executeGradleTask(project, "diffCoverage", diffCoverageModuleAbsolutePath) {
+            val diffCoverageModuleAbsolutePath = project.service<GradleDiffCoveragePluginService>()
+                .lookupDiffCoveragePluginModulePath(rootModulePath) ?: return
+            executeGradleTask("test", diffCoverageModuleAbsolutePath) {
+                executeGradleTask("diffCoverage", diffCoverageModuleAbsolutePath) {
                     showDiffCoverageReportNotification(diffCoverageModuleAbsolutePath, project)
                 }
             }
