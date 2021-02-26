@@ -1,8 +1,8 @@
 package com.github.surpsg.diffcoverage.actions
 
 import com.github.surpsg.diffcoverage.services.GradleDiffCoveragePluginService
+import com.github.surpsg.diffcoverage.services.ModifiedCodeService
 import com.github.surpsg.diffcoverage.services.GradleService
-import com.github.surpsg.diffcoverage.services.LocalChangesService
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import java.nio.file.Paths
-
 
 class RunDiffCoverageAction : AnAction() {
 
@@ -28,12 +27,8 @@ class RunDiffCoverageAction : AnAction() {
             return
         }
 
-        service<LocalChangesService>().buildPatchCollection(project).forEach {
-            println(it.afterName)
-            it.hunks.forEach {
-
-                println("\t${it.startLineAfter} ${it.endLineAfter}")
-            }
+        service<ModifiedCodeService>().collectModifiedCode(project).forEach {
+            println(it.name)
         }
 
         service<GradleService>().apply {

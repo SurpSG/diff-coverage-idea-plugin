@@ -53,7 +53,8 @@ intellij {
 //  Plugin Dependencies:
 //  https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html
 //
-  setPlugins("com.intellij.gradle")
+  setPlugins("com.intellij.gradle", "java")
+
 //    plugins 'com.intellij.gradle'
 }
 
