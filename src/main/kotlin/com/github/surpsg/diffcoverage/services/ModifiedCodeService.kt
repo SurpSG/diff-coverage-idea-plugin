@@ -5,10 +5,13 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.TestSourcesFilter
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.*
 import java.nio.file.Paths
 import com.intellij.psi.util.PsiTreeUtil
+import java.util.*
 
 
 @Service
@@ -19,7 +22,9 @@ class ModifiedCodeService(private val project: Project) {
 
         val patches = project.service<LocalChangesService>().buildPatchCollection()
         for (patch in patches) {
-            val psiFile: PsiJavaFile = obtainPsiFile(patch.path) ?: continue
+            val virtualFile: VirtualFile = obtainVirtualFile(patch.path)
+                ?.takeIf { !TestSourcesFilter.isTestSources(it, project) } ?: continue
+            val psiFile: PsiJavaFile = obtainPsiFile(virtualFile) ?: continue
             val document = obtainDocumentByPsiFile(psiFile) ?: continue
 
             val methods: MutableSet<PsiMethod> = collectPsiFileMethods(psiFile)
@@ -43,13 +48,12 @@ class ModifiedCodeService(private val project: Project) {
             .flatMap { it.methods.asSequence() }
             .toMutableSet()
 
+    private fun obtainVirtualFile(path: String): VirtualFile? {
+        return VirtualFileManager.getInstance().findFileByNioPath(Paths.get(path))
+    }
 
-    private fun obtainPsiFile(path: String): PsiJavaFile? {
-        return VirtualFileManager.getInstance()
-            .findFileByNioPath(Paths.get(path))
-            ?.let { virtualFile ->
-                PsiManager.getInstance(project).findFile(virtualFile) as? PsiJavaFile
-            }
+    private fun obtainPsiFile(virtualFile: VirtualFile): PsiJavaFile? {
+        return PsiManager.getInstance(project).findFile(virtualFile) as? PsiJavaFile
     }
 
     private fun obtainDocumentByPsiFile(psiFile: PsiFile): Document? {
