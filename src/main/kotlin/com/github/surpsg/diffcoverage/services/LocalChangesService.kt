@@ -37,36 +37,45 @@ class LocalChangesService(private var project: Project) {
     }
 
     private fun PatchHunk.toChangeRange(): Set<ChangeRange> {
-        val changes: MutableSet<ChangeRange> = mutableSetOf()
+        val context = PatchHunkScanContext(startLineAfter)
 
-        var currentLineMode = PatchLine.Type.CONTEXT
-        var modeStartOffset = 0
         var currentOffset = 0
         for (patchLine in lines) {
-            if (patchLine.type != currentLineMode) {
-                if (currentLineMode == PatchLine.Type.ADD) {
-                    changes += ChangeRange(
-                        startLineAfter + modeStartOffset + 1,
-                        startLineAfter + currentOffset
-                    )
-                }
-                modeStartOffset = currentOffset
-                currentLineMode = patchLine.type
+            if (patchLine.type != context.currentHunkMode) {
+                context.commitChangeRange(patchLine.type, currentOffset)
             }
             if (patchLine.type == PatchLine.Type.CONTEXT || patchLine.type == PatchLine.Type.ADD) {
                 currentOffset++
             }
         }
-        return changes
+        context.commitChangeRange(PatchLine.Type.CONTEXT, currentOffset)
+
+        return context.changes
     }
 
-    private fun List<PatchLine>.findFirstByTypeOffset(offset: Int, type: PatchLine.Type): Int  {
-        for (index in offset..size) {
-            if(this[index].type == type) {
-                return index
+    private class PatchHunkScanContext(
+        private val startLineOffset: Int
+    ) {
+        var currentHunkMode: PatchLine.Type = PatchLine.Type.CONTEXT
+        var currentHunkModeStartOffset: Int = 0
+
+        private val changesPrivate: MutableSet<ChangeRange> = mutableSetOf()
+
+        val changes: Set<ChangeRange> = changesPrivate
+
+        fun commitChangeRange(
+            nextHunkMode: PatchLine.Type,
+            currentHunkModeEndOffset: Int
+        ) {
+            if (currentHunkMode == PatchLine.Type.ADD) {
+                changesPrivate += ChangeRange(
+                    startLineOffset + currentHunkModeStartOffset + 1,
+                    startLineOffset + currentHunkModeEndOffset
+                )
             }
+            currentHunkMode = nextHunkMode
+            currentHunkModeStartOffset = currentHunkModeEndOffset
         }
-        return 0
     }
 
     private fun buildTextFilePatch(change: Change): TextFilePatch {
