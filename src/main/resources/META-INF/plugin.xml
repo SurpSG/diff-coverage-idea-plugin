@@ -8,6 +8,8 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.gradle</depends>
     <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.coverage</depends>
+
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.surpsg.diffcoverage.services.MyApplicationService"/>

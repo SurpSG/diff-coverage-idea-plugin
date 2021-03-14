@@ -38,6 +38,8 @@ repositories {
     jcenter()
 }
 dependencies {
+    implementation("org.jacoco:org.jacoco.core:0.8.5")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.10.0")
 }
 
@@ -53,9 +55,7 @@ intellij {
 //  Plugin Dependencies:
 //  https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html
 //
-  setPlugins("com.intellij.gradle", "java")
-
-//    plugins 'com.intellij.gradle'
+  setPlugins("com.intellij.gradle", "java", "coverage")
 }
 
 // Configure detekt plugin.

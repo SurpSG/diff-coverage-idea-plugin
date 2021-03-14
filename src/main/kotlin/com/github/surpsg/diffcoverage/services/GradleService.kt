@@ -45,7 +45,8 @@ class GradleService(private val project: Project) {
                     println("task $taskName failed")
                 }
             },
-            ProgressExecutionMode.IN_BACKGROUND_ASYNC
+            ProgressExecutionMode.IN_BACKGROUND_ASYNC,
+            false
         )
     }
 }
