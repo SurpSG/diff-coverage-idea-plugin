@@ -9,12 +9,10 @@
     <depends>com.intellij.gradle</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>com.intellij.modules.coverage</depends>
+    <depends>Coverage</depends>
 
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.surpsg.diffcoverage.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.surpsg.diffcoverage.services.MyProjectService"/>
-
         <postStartupActivity implementation="com.github.surpsg.diffcoverage.listeners.GradleStartup"/>
     </extensions>
 
@@ -31,4 +29,14 @@
             <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl D"/>
         </action>
     </actions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <javaCoverageEngineExtension
+                implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageExtensionPoint"
+                order = "last"/>
+
+        <coverageEngine
+                implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
+                order = "last"/>
+    </extensions>
 </idea-plugin>

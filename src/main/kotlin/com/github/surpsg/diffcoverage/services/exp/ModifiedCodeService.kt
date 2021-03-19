@@ -1,6 +1,7 @@
-package com.github.surpsg.diffcoverage.services
+package com.github.surpsg.diffcoverage.services.exp
 
 import com.github.surpsg.diffcoverage.domain.ChangeRange
+import com.github.surpsg.diffcoverage.services.diff.LocalChangesService
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
@@ -11,7 +12,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.*
 import java.nio.file.Paths
 import com.intellij.psi.util.PsiTreeUtil
-import java.util.*
 
 
 @Service

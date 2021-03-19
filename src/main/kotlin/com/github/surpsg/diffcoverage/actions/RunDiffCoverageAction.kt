@@ -2,8 +2,8 @@ package com.github.surpsg.diffcoverage.actions
 
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
-import com.github.surpsg.diffcoverage.services.GradleDiffCoveragePluginService
-import com.github.surpsg.diffcoverage.services.GradleService
+import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoveragePluginService
+import com.github.surpsg.diffcoverage.services.gradle.GradleService
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType

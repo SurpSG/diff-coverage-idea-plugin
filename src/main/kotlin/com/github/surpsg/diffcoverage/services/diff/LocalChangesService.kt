@@ -1,5 +1,6 @@
-package com.github.surpsg.diffcoverage.services
+package com.github.surpsg.diffcoverage.services.diff
 
+import com.form.diff.CodeUpdateInfo
 import com.github.surpsg.diffcoverage.domain.ChangeRange
 import com.github.surpsg.diffcoverage.domain.FileChange
 import com.intellij.openapi.components.Service
@@ -13,6 +14,20 @@ import com.intellij.openapi.vcs.changes.ChangeListManager
 
 @Service
 class LocalChangesService(private var project: Project) {
+
+    fun obtainCodeUpdateInfo(): CodeUpdateInfo {
+        return CodeUpdateInfo(
+            buildPatchCollection().map {
+                it.path to collectValuesFromRanges(it.changedRanges)
+            }.toMap()
+        )
+    }
+
+    private fun collectValuesFromRanges(ranges: Set<ChangeRange>): Set<Int> {
+        return ranges.asSequence().flatMap { range ->
+            (range.from..range.to).asSequence()
+        }.toSet()
+    }
 
     fun buildPatchCollection(): List<FileChange> {
         return ChangeListManager.getInstance(project).changeLists.asSequence()

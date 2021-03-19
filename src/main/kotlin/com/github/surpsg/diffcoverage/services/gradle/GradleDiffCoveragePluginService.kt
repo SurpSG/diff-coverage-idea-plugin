@@ -1,4 +1,4 @@
-package com.github.surpsg.diffcoverage.services
+package com.github.surpsg.diffcoverage.services.gradle
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -78,8 +78,9 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                 settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID,
                 object : TaskCallback {
                     override fun onSuccess() {
-                        val diffFile = getDiffCoverageConfigFile(projectIdToPath.second)
-                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffFile)
+                        val diffContent = getDiffCoverageConfigFile(projectIdToPath.second)
+                            .readText().replace("\\", "\\\\")
+                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffContent)
                         println(diffCoverageInfo)
                         complete(diffCoverageInfo)
                     }

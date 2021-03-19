@@ -1,15 +1,21 @@
-package com.github.surpsg.diffcoverage
+package com.github.surpsg.diffcoverage.extensions
 
+import com.form.coverage.filters.ModifiedLinesFilter
+import com.github.surpsg.diffcoverage.services.diff.LocalChangesService
 import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
 import com.intellij.coverage.CoverageSuite
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 import com.intellij.rt.coverage.data.LineCoverage
 import com.intellij.rt.coverage.data.LineData
 import com.intellij.rt.coverage.data.ProjectData
 import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
 import org.jacoco.core.analysis.ICounter
+import org.jacoco.core.analysis.ICoverageVisitor
+import org.jacoco.core.internal.analysis.FilteringAnalyzer
 import org.jacoco.core.tools.ExecFileLoader
 import java.io.File
 import java.nio.file.FileVisitResult
@@ -18,7 +24,10 @@ import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 
-class DiffCoverageRunner(private val classesPath: Set<Path>) : CoverageRunner() {
+class DiffCoverageRunner(
+    private val project: Project,
+    private val classesPath: Set<Path>
+) : CoverageRunner() {
 
     override fun loadCoverageData(sessionDataFile: File, baseCoverageSuite: CoverageSuite?): ProjectData {
         return ProjectData().apply {
@@ -40,9 +49,8 @@ class DiffCoverageRunner(private val classesPath: Set<Path>) : CoverageRunner() 
             var className = classCoverage.name
             className = className.replace('\\', '.').replace('/', '.')
             val classData = data.getOrCreateClassData(className)
-            val methods = classCoverage.methods
             val lines = arrayOfNulls<LineData>(classCoverage.lastLine + 1)
-            for (method in methods) {
+            for (method in classCoverage.methods) {
                 val desc = method.name + method.desc
                 // Line numbers are 1-based here.
                 val firstLine = method.firstLine
@@ -85,11 +93,12 @@ class DiffCoverageRunner(private val classesPath: Set<Path>) : CoverageRunner() 
     }
 
     private fun getCoverageBuilder(sessionDataFile: File): CoverageBuilder {
-        val executionDataStore = ExecFileLoader().apply { load(sessionDataFile) }.executionDataStore
         return CoverageBuilder().apply {
-            val analyzer = Analyzer(executionDataStore, this)
+            val analyzer = buildAnalyzer(sessionDataFile, this)
+            val fileVisitor = fileVisitor(analyzer)
+
             classesPath.forEach {
-                Files.walkFileTree(it, fileVisitor(analyzer))
+                Files.walkFileTree(it, fileVisitor)
             }
         }
     }
@@ -102,6 +111,21 @@ class DiffCoverageRunner(private val classesPath: Set<Path>) : CoverageRunner() 
                 LOG.info(e)
             }
             return FileVisitResult.CONTINUE
+        }
+    }
+
+    private fun buildAnalyzer(
+        sessionDataFile: File,
+        coverageVisitor: ICoverageVisitor
+    ): FilteringAnalyzer {
+        val codeUpdateInfo = project.service<LocalChangesService>().obtainCodeUpdateInfo()
+        val executionDataStore = ExecFileLoader().apply { load(sessionDataFile) }.executionDataStore
+        return FilteringAnalyzer(
+            executionDataStore,
+            coverageVisitor,
+            codeUpdateInfo::isInfoExists
+        ) {
+            ModifiedLinesFilter(codeUpdateInfo)
         }
     }
 
