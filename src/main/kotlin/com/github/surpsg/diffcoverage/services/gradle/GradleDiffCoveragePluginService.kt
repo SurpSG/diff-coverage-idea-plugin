@@ -2,6 +2,9 @@ package com.github.surpsg.diffcoverage.services.gradle
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIGURATION_PROPERTY
+import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIG_FILE_NAME
+import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_FAKE_TASK
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.intellij.build.SyncViewManager
 import com.intellij.execution.executors.DefaultRunExecutor
@@ -21,6 +24,7 @@ import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.jetbrains.plugins.gradle.util.GradleUtil
+import org.jetbrains.rpc.LOG
 import java.io.File
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -31,23 +35,34 @@ class GradleDiffCoveragePluginService(private val project: Project) {
     fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
         val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
         if (diffCoveragePluginAppliedTo.size > 1 || diffCoveragePluginAppliedTo.first().value.size > 1) {
+            LOG.warn("Diff coverage was skipped. " +
+                    "Found more than one diff coverage configuration: $diffCoveragePluginAppliedTo")
             return null
         }
 
-        val diffCoverageModuleKey = diffCoveragePluginAppliedTo.first().value.first()
+        val diffCoverageModule = diffCoveragePluginAppliedTo.first().value.first()
+        val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
         return GradleUtil.findGradleModuleData(project, rootModulePath)
             ?.parent
             ?.let { ExternalSystemApiUtil.findAll(it, ProjectKeys.MODULE) }
             ?.find { it.data.id == diffCoverageModuleKey }
             ?.data
-            ?.let{ it.id to it.linkedExternalProjectPath }
+            ?.let { diffCoverageModule to it.linkedExternalProjectPath }
+    }
+
+    private fun normalizeModuleKey(rootModulePath: String, moduleKey: String): String {
+        return if (moduleKey == ROOT_PROJECT_KEY) {
+            Paths.get(rootModulePath).fileName.toString()
+        } else {
+            rootModulePath
+        }
     }
 
     private fun lookupDiffCoveragePluginModules(): Map<String, Set<String>> {
         val projectsWithDiffCoverPlugin = mutableMapOf<String, MutableSet<String>>()
         for (projectEntry in GradleExtensionsSettings.getInstance(project).projects) {
             for (moduleExtension in projectEntry.value.extensions) {
-                if (moduleExtension.value.extensions.containsKey("diffCoverageReport")) {
+                if (moduleExtension.value.extensions.containsKey(DIFF_COVERAGE_CONFIGURATION_PROPERTY)) {
                     projectsWithDiffCoverPlugin.computeIfAbsent(projectEntry.key) {
                         mutableSetOf()
                     }.add(moduleExtension.key)
@@ -61,7 +76,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         val settings = ExternalSystemTaskExecutionSettings().apply {
             executionName = DIFF_COVERAGE_INFO_COLLECT_PROCESS
             externalProjectPath = projectIdToPath.second
-            taskNames = listOf("projects")
+            taskNames = listOf(DIFF_COVERAGE_FAKE_TASK)
             vmOptions = GradleSettings.getInstance(project).gradleVmOptions
             externalSystemIdString = GradleConstants.SYSTEM_ID.id
         }
@@ -81,7 +96,6 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                         val diffContent = getDiffCoverageConfigFile(projectIdToPath.second)
                             .readText().replace("\\", "\\\\")
                         val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffContent)
-                        println(diffCoverageInfo)
                         complete(diffCoverageInfo)
                     }
 
@@ -96,7 +110,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         }
     }
 
-    fun getDiffCoverageConfigFile(moduleAbsolutePath: String): File {
+    private fun getDiffCoverageConfigFile(moduleAbsolutePath: String): File {
         return Paths.get(moduleAbsolutePath, "build", DIFF_COVERAGE_CONFIG_FILE_NAME).toFile()
     }
 
@@ -126,7 +140,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
     }
 
     companion object {
-        const val DIFF_COVERAGE_CONFIG_FILE_NAME = "diffCoverage.json"
         const val DIFF_COVERAGE_INFO_COLLECT_PROCESS = "Collect diff coverage plugin info"
+        const val ROOT_PROJECT_KEY = ":"
     }
 }

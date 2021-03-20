@@ -1,5 +1,6 @@
 package com.github.surpsg.diffcoverage.actions
 
+import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_TASK
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
 import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoveragePluginService
@@ -41,7 +42,7 @@ class RunDiffCoverageAction : AnAction() {
 
         ProgressManager.getInstance().runProcess({
             diffCoveragePluginService.collectDiffCoverageInfo(diffCoverageModule).thenAccept { coverageInfo ->
-                project.service<GradleService>().executeGradleTask("diffCoverage", diffCoverageModule.second) {
+                project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
                     showDiffCoverageReportNotification(coverageInfo, project)
                 }
 
