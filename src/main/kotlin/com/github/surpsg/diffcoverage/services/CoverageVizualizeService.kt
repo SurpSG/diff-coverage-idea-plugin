@@ -1,6 +1,7 @@
 package com.github.surpsg.diffcoverage.services
 
-import com.github.surpsg.diffcoverage.DiffCoverageRunner
+import com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine
+import com.github.surpsg.diffcoverage.extensions.DiffCoverageRunner
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.intellij.coverage.*
 import com.intellij.openapi.application.ApplicationManager
@@ -24,7 +25,7 @@ class CoverageVizualizeService(private val project: Project) {
             .map(File::toPath).toSet()
 
         return coverageEngine().createCoverageSuite(
-            DiffCoverageRunner(classesPath),
+            DiffCoverageRunner(project, classesPath),
             "DiffCoverage",
             DefaultCoverageFileProvider(File(coverageInfo.execFiles.first())),
             null,
@@ -33,11 +34,10 @@ class CoverageVizualizeService(private val project: Project) {
         ) ?: throw RuntimeException("Cannot create coverage suite")
     }
 
-    private fun coverageEngine(): CoverageEngine = CoverageEngine.EP_NAME.findFirstSafe {
-        it.javaClass.simpleName.endsWith("JavaCoverageEngine")
-    } ?: throw RuntimeException(
-        """Cannot find java coverage engine in:             
+    private fun coverageEngine(): CoverageEngine = CoverageEngine.EP_NAME.findExtension(DiffCoverageEngine::class.java)
+        ?: throw RuntimeException(
+            """Cannot find java coverage engine in:             
             ${CoverageEngine.EP_NAME.extensionList.map { it::class.java }.joinToString(", ")}
             """.trimIndent()
-    )
+        )
 }

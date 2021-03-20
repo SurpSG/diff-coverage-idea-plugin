@@ -3,6 +3,10 @@ import org.jetbrains.changelog.closure
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+repositories {
+    maven(url = "https://jitpack.io")
+}
+
 plugins {
     // Java support
     id("java")
@@ -40,6 +44,7 @@ repositories {
 dependencies {
     implementation("org.jacoco:org.jacoco.core:0.8.5")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
+    implementation("com.github.form-com.diff-coverage-gradle:jacoco-filtering-extension:0.7.1")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.10.0")
 }
 

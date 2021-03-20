@@ -1,4 +1,4 @@
-package com.github.surpsg.diffcoverage.services
+package com.github.surpsg.diffcoverage.services.exp
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
