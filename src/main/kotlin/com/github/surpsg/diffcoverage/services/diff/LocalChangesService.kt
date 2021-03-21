@@ -3,7 +3,9 @@ package com.github.surpsg.diffcoverage.services.diff
 import com.form.diff.CodeUpdateInfo
 import com.github.surpsg.diffcoverage.domain.ChangeRange
 import com.github.surpsg.diffcoverage.domain.FileChange
+import com.github.surpsg.diffcoverage.services.CacheService
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diff.impl.patch.PatchHunk
 import com.intellij.openapi.diff.impl.patch.PatchLine
 import com.intellij.openapi.diff.impl.patch.TextFilePatch
@@ -16,11 +18,13 @@ import com.intellij.openapi.vcs.changes.ChangeListManager
 class LocalChangesService(private var project: Project) {
 
     fun obtainCodeUpdateInfo(): CodeUpdateInfo {
-        return CodeUpdateInfo(
-            buildPatchCollection().map {
-                it.path to collectValuesFromRanges(it.changedRanges)
-            }.toMap()
-        )
+        return project.service<CacheService>().getCached {
+            CodeUpdateInfo(
+                buildPatchCollection().map {
+                    it.path to collectValuesFromRanges(it.changedRanges)
+                }.toMap()
+            )
+        }
     }
 
     private fun collectValuesFromRanges(ranges: Set<ChangeRange>): Set<Int> {
@@ -30,11 +34,13 @@ class LocalChangesService(private var project: Project) {
     }
 
     fun buildPatchCollection(): List<FileChange> {
-        return ChangeListManager.getInstance(project).changeLists.asSequence()
-            .flatMap { it.changes.asSequence() }
-            .map(::buildTextFilePatch)
-            .map(::toFileChange)
-            .toList()
+        return project.service<CacheService>().getCached {
+            ChangeListManager.getInstance(project).changeLists.asSequence()
+                .flatMap { it.changes.asSequence() }
+                .map(::buildTextFilePatch)
+                .map(::toFileChange)
+                .toList()
+        }
     }
 
     private fun toFileChange(patch: TextFilePatch): FileChange {

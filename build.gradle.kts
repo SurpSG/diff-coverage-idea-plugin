@@ -42,9 +42,11 @@ repositories {
     jcenter()
 }
 dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.9")
     implementation("org.jacoco:org.jacoco.core:0.8.5")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
     implementation("com.github.form-com.diff-coverage-gradle:jacoco-filtering-extension:0.7.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.10.0")
 }
 

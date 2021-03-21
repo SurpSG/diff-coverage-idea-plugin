@@ -1,5 +1,6 @@
 package com.github.surpsg.diffcoverage.actions
 
+import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_TASK
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
@@ -11,12 +12,10 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.EmptyProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import kotlinx.coroutines.launch
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import java.nio.file.Paths
@@ -40,17 +39,14 @@ class RunDiffCoverageAction : AnAction() {
         val diffCoverageModule = diffCoveragePluginService.lookupDiffCoveragePluginModule(settings.externalProjectPath)
             ?: return
 
-        ProgressManager.getInstance().runProcess({
-            diffCoveragePluginService.collectDiffCoverageInfo(diffCoverageModule).thenAccept { coverageInfo ->
-                project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
-                    showDiffCoverageReportNotification(coverageInfo, project)
-                }
-
-                project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
+        BACKGROUND_SCOPE.launch {
+            val coverageInfo = diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)
+            project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
+                showDiffCoverageReportNotification(coverageInfo, project)
             }
-        }, EmptyProgressIndicator(ModalityState.defaultModalityState()))
+            project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
+        }
     }
-
 
     private fun showDiffCoverageReportNotification(diffCoverageInfo: DiffCoverageConfiguration, project: Project) {
         val defaultDiffCoverageReportPath = "diffCoverage/html/index.html"

@@ -2,13 +2,16 @@ package com.github.surpsg.diffcoverage.services.gradle
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIGURATION_PROPERTY
 import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIG_FILE_NAME
 import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_FAKE_TASK
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
+import com.github.surpsg.diffcoverage.services.CacheService
 import com.intellij.build.SyncViewManager
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.model.ProjectKeys
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemRunConfiguration
@@ -19,6 +22,8 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.jetbrains.rd.util.first
+import kotlinx.coroutines.future.asDeferred
+import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.service.task.GradleTaskManager
 import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
@@ -72,7 +77,17 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         return projectsWithDiffCoverPlugin
     }
 
-    fun collectDiffCoverageInfo(projectIdToPath: Pair<String, String>): CompletableFuture<DiffCoverageConfiguration> {
+    suspend fun obtainCacheableDiffCoverageInfo(projectIdToPath: Pair<String, String>): DiffCoverageConfiguration {
+        return project.service<CacheService>().suspendableGetCached {
+            withContext(BACKGROUND_SCOPE.coroutineContext) {
+                collectDiffCoverageInfo(projectIdToPath).asDeferred().await()
+            }
+        }
+    }
+
+    private fun collectDiffCoverageInfo(
+        projectIdToPath: Pair<String, String>
+    ): CompletableFuture<DiffCoverageConfiguration> {
         val settings = ExternalSystemTaskExecutionSettings().apply {
             executionName = DIFF_COVERAGE_INFO_COLLECT_PROCESS
             externalProjectPath = projectIdToPath.second
@@ -100,7 +115,10 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                     }
 
                     override fun onFailure() {
-                        completeExceptionally(RuntimeException("'$DIFF_COVERAGE_INFO_COLLECT_PROCESS' was failed"))
+                        "'$DIFF_COVERAGE_INFO_COLLECT_PROCESS' was failed".let {
+                            LOG.error(it)
+                            completeExceptionally(RuntimeException(it))
+                        }
                     }
                 },
                 ProgressExecutionMode.IN_BACKGROUND_ASYNC,
