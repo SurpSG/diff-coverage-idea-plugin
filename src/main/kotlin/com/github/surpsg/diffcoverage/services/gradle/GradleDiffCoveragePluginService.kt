@@ -2,14 +2,20 @@ package com.github.surpsg.diffcoverage.services.gradle
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.surpsg.diffcoverage.DiffCoverageBundle
 import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
-import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIGURATION_PROPERTY
-import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_CONFIG_FILE_NAME
-import com.github.surpsg.diffcoverage.domain.DIFF_COVERAGE_FAKE_TASK
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
+import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO
+import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO_FAILED
+import com.github.surpsg.diffcoverage.properties.MULTIPLE_DIFF_COVERAGE_ENTRIES
+import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_CONFIGURATION_PROPERTY
+import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_CONFIG_FILE_NAME
+import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_FAKE_TASK
 import com.github.surpsg.diffcoverage.services.CacheService
+import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
 import com.intellij.build.SyncViewManager
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.model.ProjectKeys
@@ -29,7 +35,6 @@ import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.jetbrains.plugins.gradle.util.GradleUtil
-import org.jetbrains.rpc.LOG
 import java.io.File
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -38,16 +43,16 @@ import java.util.concurrent.CompletableFuture
 class GradleDiffCoveragePluginService(private val project: Project) {
 
     fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
-        val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
-        if (diffCoveragePluginAppliedTo.size > 1 || diffCoveragePluginAppliedTo.first().value.size > 1) {
-            LOG.warn("""
-                Diff coverage was skipped. Found more than one diff coverage configuration:
-                    $diffCoveragePluginAppliedTo
-            """.trimIndent())
+        val diffPluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
+        if (diffPluginAppliedTo.size > 1 || diffPluginAppliedTo.first().value.size > 1) {
+            project.service<BalloonNotificationService>().notify(
+                notificationType = NotificationType.ERROR,
+                message = DiffCoverageBundle.message(MULTIPLE_DIFF_COVERAGE_ENTRIES)
+            )
             return null
         }
 
-        val diffCoverageModule = diffCoveragePluginAppliedTo.first().value.first()
+        val diffCoverageModule = diffPluginAppliedTo.first().value.first()
         val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
         return GradleUtil.findGradleModuleData(project, rootModulePath)
             ?.parent
@@ -91,7 +96,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         projectIdToPath: Pair<String, String>
     ): CompletableFuture<DiffCoverageConfiguration> {
         val settings = ExternalSystemTaskExecutionSettings().apply {
-            executionName = DIFF_COVERAGE_INFO_COLLECT_PROCESS
+            executionName = DiffCoverageBundle.message(DIFF_COVERAGE_COLLECT_INFO)
             externalProjectPath = projectIdToPath.second
             taskNames = listOf(DIFF_COVERAGE_FAKE_TASK)
             vmOptions = GradleSettings.getInstance(project).gradleVmOptions
@@ -117,8 +122,11 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                     }
 
                     override fun onFailure() {
-                        "'$DIFF_COVERAGE_INFO_COLLECT_PROCESS' was failed".let {
-                            LOG.error(it)
+                        DiffCoverageBundle.message(DIFF_COVERAGE_COLLECT_INFO_FAILED).let {
+                            project.service<BalloonNotificationService>().notify(
+                                notificationType = NotificationType.ERROR,
+                                message = it
+                            )
                             completeExceptionally(RuntimeException(it))
                         }
                     }
@@ -159,7 +167,6 @@ class GradleDiffCoveragePluginService(private val project: Project) {
     }
 
     companion object {
-        const val DIFF_COVERAGE_INFO_COLLECT_PROCESS = "Collect diff coverage plugin info"
         const val ROOT_PROJECT_KEY = ":"
     }
 }

@@ -1,6 +1,8 @@
 package com.github.surpsg.diffcoverage.extensions
 
 import com.form.coverage.filters.ModifiedLinesFilter
+import com.github.surpsg.diffcoverage.DiffCoverageBundle
+import com.github.surpsg.diffcoverage.properties.PLUGIN_NAME
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
@@ -131,7 +133,7 @@ class DiffCoverageRunner(
         }
     }.executionDataStore
 
-    override fun getPresentableName(): String = "DiffCoverage"
+    override fun getPresentableName(): String = DiffCoverageBundle.message(PLUGIN_NAME)
 
     override fun getId(): String = "diff_coverage"
 

@@ -28,5 +28,8 @@
         <coverageEngine
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
                 order = "last"/>
+
+        <notification.parentGroup id="diff.coverage.notification" title="Diff Coverage notifications"/>
+        <notification.group parentId="diff.coverage.notification" groupId="diff.coverage.notification.balloon"/>
     </extensions>
 </idea-plugin>

@@ -1,13 +1,11 @@
 package com.github.surpsg.diffcoverage
 
 import com.intellij.AbstractBundle
-import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.PropertyKey
 
-@NonNls
-private const val BUNDLE = "messages.MyBundle"
+private const val BUNDLE = "messages.DiffCoverageBundle"
 
-object MyBundle : AbstractBundle(BUNDLE) {
+object DiffCoverageBundle : AbstractBundle(BUNDLE) {
 
     @Suppress("SpreadOperator")
     @JvmStatic

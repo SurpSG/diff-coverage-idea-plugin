@@ -1,9 +1,13 @@
 package com.github.surpsg.diffcoverage.services
 
+import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine
 import com.github.surpsg.diffcoverage.extensions.DiffCoverageRunner
-import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
-import com.intellij.coverage.*
+import com.intellij.coverage.CoverageDataManager
+import com.intellij.coverage.CoverageEngine
+import com.intellij.coverage.CoverageSuite
+import com.intellij.coverage.CoverageSuitesBundle
+import com.intellij.coverage.DefaultCoverageFileProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
