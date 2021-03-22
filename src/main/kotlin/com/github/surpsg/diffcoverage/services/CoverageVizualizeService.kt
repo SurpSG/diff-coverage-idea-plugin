@@ -24,10 +24,14 @@ class CoverageVizualizeService(private val project: Project) {
             .map(::File).filter(File::exists)
             .map(File::toPath).toSet()
 
+        val execFiles = coverageInfo.execFiles.asSequence()
+            .map(::File).filter(File::exists)
+            .map(File::toPath).toSet()
+
         return coverageEngine().createCoverageSuite(
-            DiffCoverageRunner(project, classesPath),
+            DiffCoverageRunner(project, classesPath, execFiles),
             "DiffCoverage",
-            DefaultCoverageFileProvider(File(coverageInfo.execFiles.first())),
+            DefaultCoverageFileProvider(execFiles.first().toFile()),
             null,
             System.currentTimeMillis(),
             null, false, true, false, project

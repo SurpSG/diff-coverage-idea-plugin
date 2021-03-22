@@ -15,9 +15,11 @@ import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
 import org.jacoco.core.analysis.ICounter
 import org.jacoco.core.analysis.ICoverageVisitor
+import org.jacoco.core.data.ExecutionDataStore
 import org.jacoco.core.internal.analysis.FilteringAnalyzer
 import org.jacoco.core.tools.ExecFileLoader
 import java.io.File
+import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
@@ -26,24 +28,22 @@ import java.nio.file.attribute.BasicFileAttributes
 
 class DiffCoverageRunner(
     private val project: Project,
-    private val classesPath: Set<Path>
+    private val classesPath: Set<Path>,
+    private val execFilesPaths: Set<Path>
 ) : CoverageRunner() {
 
     override fun loadCoverageData(sessionDataFile: File, baseCoverageSuite: CoverageSuite?): ProjectData {
         return ProjectData().apply {
             try {
-                loadExecutionData(sessionDataFile, this)
+                loadExecutionData(this)
             } catch (e: Exception) {
                 LOG.error(e)
             }
         }
     }
 
-    private fun loadExecutionData(
-        sessionDataFile: File,
-        data: ProjectData
-    ) {
-        val coverageBuilder = getCoverageBuilder(sessionDataFile)
+    private fun loadExecutionData(data: ProjectData) {
+        val coverageBuilder = getCoverageBuilder()
 
         for (classCoverage in coverageBuilder.classes) {
             var className = classCoverage.name
@@ -52,10 +52,7 @@ class DiffCoverageRunner(
             val lines = arrayOfNulls<LineData>(classCoverage.lastLine + 1)
             for (method in classCoverage.methods) {
                 val desc = method.name + method.desc
-                // Line numbers are 1-based here.
-                val firstLine = method.firstLine
-                val lastLine = method.lastLine
-                for (i in firstLine..lastLine) {
+                for (i in method.firstLine..method.lastLine) {
                     val methodLine = method.getLine(i)
                     val methodLineStatus = methodLine.status
                     if (methodLineStatus == ICounter.EMPTY) continue
@@ -74,9 +71,8 @@ class DiffCoverageRunner(
                     }
                     lineData.hits =
                         if (methodLineStatus == ICounter.FULLY_COVERED || methodLineStatus == ICounter.PARTLY_COVERED) 1 else 0
-                    val branchCounter = methodLine.branchCounter
-                    var coveredCount = branchCounter.coveredCount
-                    for (b in 0 until branchCounter.totalCount) {
+                    var coveredCount = methodLine.branchCounter.coveredCount
+                    for (b in 0 until methodLine.branchCounter.totalCount) {
                         val jump = lineData.addJump(b)
                         if (coveredCount-- > 0) {
                             jump.trueHits = 1
@@ -92,9 +88,9 @@ class DiffCoverageRunner(
         }
     }
 
-    private fun getCoverageBuilder(sessionDataFile: File): CoverageBuilder {
+    private fun getCoverageBuilder(): CoverageBuilder {
         return CoverageBuilder().apply {
-            val analyzer = buildAnalyzer(sessionDataFile, this)
+            val analyzer = buildAnalyzer(this)
             val fileVisitor = fileVisitor(analyzer)
 
             classesPath.forEach {
@@ -115,19 +111,27 @@ class DiffCoverageRunner(
     }
 
     private fun buildAnalyzer(
-        sessionDataFile: File,
         coverageVisitor: ICoverageVisitor
     ): FilteringAnalyzer {
         val codeUpdateInfo = project.service<LocalChangesService>().obtainCodeUpdateInfo()
-        val executionDataStore = ExecFileLoader().apply { load(sessionDataFile) }.executionDataStore
         return FilteringAnalyzer(
-            executionDataStore,
+            loadCoverage(),
             coverageVisitor,
             codeUpdateInfo::isInfoExists
         ) {
             ModifiedLinesFilter(codeUpdateInfo)
         }
     }
+
+    private fun loadCoverage(): ExecutionDataStore = ExecFileLoader().apply {
+        execFilesPaths.forEach {
+            try {
+                load(it.toFile())
+            } catch (e: IOException) {
+                throw RuntimeException("Cannot load coverage data from file: $it", e)
+            }
+        }
+    }.executionDataStore
 
     override fun getPresentableName(): String = "DiffCoverage"
 
