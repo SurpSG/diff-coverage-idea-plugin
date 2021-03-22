@@ -38,16 +38,15 @@ import java.util.concurrent.CompletableFuture
 class GradleDiffCoveragePluginService(private val project: Project) {
 
     fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
-        val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
-        if (diffCoveragePluginAppliedTo.size > 1 || diffCoveragePluginAppliedTo.first().value.size > 1) {
-            LOG.warn("""
-                Diff coverage was skipped. Found more than one diff coverage configuration:
-                    $diffCoveragePluginAppliedTo
-            """.trimIndent())
+        val diffPluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
+        if (diffPluginAppliedTo.size > 1 || diffPluginAppliedTo.first().value.size > 1) {
+            LOG.warn(
+                "Diff coverage was skipped. Found more than one diff coverage configuration: $diffPluginAppliedTo"
+            )
             return null
         }
 
-        val diffCoverageModule = diffCoveragePluginAppliedTo.first().value.first()
+        val diffCoverageModule = diffPluginAppliedTo.first().value.first()
         val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
         return GradleUtil.findGradleModuleData(project, rootModulePath)
             ?.parent

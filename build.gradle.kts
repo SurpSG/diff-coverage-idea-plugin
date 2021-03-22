@@ -11,7 +11,7 @@ plugins {
     // Java support
     id("java")
     // Kotlin support
-    id("org.jetbrains.kotlin.jvm") version "1.3.72"
+    id("org.jetbrains.kotlin.jvm") version "1.4.0"
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
     id("org.jetbrains.intellij") version "0.4.21"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -19,7 +19,7 @@ plugins {
     // detekt linter - read more: https://detekt.github.io/detekt/kotlindsl.html
     id("io.gitlab.arturbosch.detekt") version "1.10.0"
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
-    id("org.jlleitschuh.gradle.ktlint") version "9.3.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.0.0"
 }
 
 // Import variables from gradle.properties file
@@ -44,6 +44,7 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.9")
+
     implementation("org.jacoco:org.jacoco.core:0.8.5")
     implementation("com.github.form-com.diff-coverage-gradle:jacoco-filtering-extension:0.7.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
@@ -62,7 +63,7 @@ intellij {
 //  Plugin Dependencies:
 //  https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html
 //
-  setPlugins("com.intellij.gradle", "java", "coverage")
+    setPlugins("com.intellij.gradle", "java", "coverage")
 }
 
 // Configure detekt plugin.

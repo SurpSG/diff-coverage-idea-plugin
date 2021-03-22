@@ -10,12 +10,6 @@ style:
     active: true
     maxJumpCount: 3
 
-formatting:
-  NoWildcardImports:
-    active: false
-  Indentation:
-    active: false
-
 exceptions:
   active: true
   TooGenericExceptionCaught:

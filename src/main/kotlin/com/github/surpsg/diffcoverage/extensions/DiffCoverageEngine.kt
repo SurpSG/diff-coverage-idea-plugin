@@ -2,7 +2,11 @@ package com.github.surpsg.diffcoverage.extensions
 
 import com.form.diff.ClassFile
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
-import com.intellij.coverage.*
+import com.intellij.coverage.CoverageFileProvider
+import com.intellij.coverage.CoverageRunner
+import com.intellij.coverage.CoverageSuitesBundle
+import com.intellij.coverage.JavaCoverageEngine
+import com.intellij.coverage.JavaCoverageSuite
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
