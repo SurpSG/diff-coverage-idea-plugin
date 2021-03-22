@@ -40,8 +40,10 @@ class GradleDiffCoveragePluginService(private val project: Project) {
     fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
         val diffCoveragePluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
         if (diffCoveragePluginAppliedTo.size > 1 || diffCoveragePluginAppliedTo.first().value.size > 1) {
-            LOG.warn("Diff coverage was skipped. " +
-                    "Found more than one diff coverage configuration: $diffCoveragePluginAppliedTo")
+            LOG.warn("""
+                Diff coverage was skipped. Found more than one diff coverage configuration:
+                    $diffCoveragePluginAppliedTo
+            """.trimIndent())
             return null
         }
 
@@ -143,12 +145,11 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                         def reportsRoot = project.file(project.diffCoverageReport.reportConfiguration.baseReportDir)
                         new File(project.buildDir, "$DIFF_COVERAGE_CONFIG_FILE_NAME").write ""${'"'}
                             {
-                                "project": "${varSign}{project.name}",
-                                "projectDir": "${varSign}{project.projectDir}",
-                                "execFiles": [ ${varSign}execFiles ],
-                                "classes": [ ${varSign}classes ],
-                                "reportsRoot": "${varSign}reportsRoot"
-                                
+                                "project": "$varSign{project.name}",
+                                "projectDir": "$varSign{project.projectDir}",
+                                "execFiles": [ $varSign{execFiles} ],
+                                "classes": [ $varSign{classes} ],
+                                "reportsRoot": "$varSign{reportsRoot}"
                             }
                         ""${'"'}
                     }

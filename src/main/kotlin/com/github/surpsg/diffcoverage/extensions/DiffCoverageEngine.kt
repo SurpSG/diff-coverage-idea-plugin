@@ -1,7 +1,6 @@
 package com.github.surpsg.diffcoverage.extensions
 
 import com.form.diff.ClassFile
-import com.github.surpsg.diffcoverage.services.diff.LocalChangesService
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.coverage.*
 import com.intellij.openapi.components.service
@@ -19,16 +18,19 @@ class DiffCoverageEngine : JavaCoverageEngine() {
         suite: CoverageSuitesBundle
     ): Boolean {
         val classFile = ClassFile(sourceFile.name, qualifiedName.replace(".", "/"))
-        return suite.project.service<ModifiedFilesService>()
-            .isFileModified(classFile)
+        return suite.project.service<ModifiedFilesService>().isFileModified(classFile)
     }
 
     override fun createSuite(
         acceptedCovRunner: CoverageRunner?,
-        name: String?, coverageDataFileProvider: CoverageFileProvider?,
-        filters: Array<String?>?, excludePatterns: Array<String?>?,
+        name: String?,
+        coverageDataFileProvider: CoverageFileProvider?,
+        filters: Array<String?>?,
+        excludePatterns: Array<String?>?,
         lastCoverageTimeStamp: Long,
-        coverageByTestEnabled: Boolean, tracingEnabled: Boolean, trackTestFolders: Boolean,
+        coverageByTestEnabled: Boolean,
+        tracingEnabled: Boolean,
+        trackTestFolders: Boolean,
         project: Project
     ): JavaCoverageSuite {
         return object : JavaCoverageSuite(
@@ -36,7 +38,7 @@ class DiffCoverageEngine : JavaCoverageEngine() {
             lastCoverageTimeStamp, coverageByTestEnabled, tracingEnabled, trackTestFolders,
             acceptedCovRunner, this, project
         ) {
-            val diffPackages: Set<String> = project.service<LocalChangesService>().buildPatchCollection().asSequence()
+            val diffPackages: Set<String> = project.service<ModifiedFilesService>().buildPatchCollection().asSequence()
                 .map { Paths.get(it.path).parent.toString() }
                 .map { it.replace(File.separator, ".") }
                 .toSet()

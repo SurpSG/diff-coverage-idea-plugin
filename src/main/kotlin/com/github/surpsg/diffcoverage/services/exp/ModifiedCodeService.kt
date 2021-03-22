@@ -1,7 +1,7 @@
 package com.github.surpsg.diffcoverage.services.exp
 
 import com.github.surpsg.diffcoverage.domain.ChangeRange
-import com.github.surpsg.diffcoverage.services.diff.LocalChangesService
+import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
@@ -13,14 +13,13 @@ import com.intellij.psi.*
 import java.nio.file.Paths
 import com.intellij.psi.util.PsiTreeUtil
 
-
 @Service
 class ModifiedCodeService(private val project: Project) {
 
     fun collectModifiedCode(): Set<PsiMethod> {
         val modifiedMethods: MutableSet<PsiMethod> = mutableSetOf()
 
-        val patches = project.service<LocalChangesService>().buildPatchCollection()
+        val patches = project.service<ModifiedFilesService>().buildPatchCollection()
         for (patch in patches) {
             val virtualFile: VirtualFile = obtainVirtualFile(patch.path)
                 ?.takeIf { !TestSourcesFilter.isTestSources(it, project) } ?: continue

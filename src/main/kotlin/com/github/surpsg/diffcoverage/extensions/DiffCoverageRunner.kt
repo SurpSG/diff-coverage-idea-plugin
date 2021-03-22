@@ -1,7 +1,7 @@
 package com.github.surpsg.diffcoverage.extensions
 
 import com.form.coverage.filters.ModifiedLinesFilter
-import com.github.surpsg.diffcoverage.services.diff.LocalChangesService
+import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
 import com.intellij.coverage.CoverageSuite
@@ -19,7 +19,6 @@ import org.jacoco.core.data.ExecutionDataStore
 import org.jacoco.core.internal.analysis.FilteringAnalyzer
 import org.jacoco.core.tools.ExecFileLoader
 import java.io.File
-import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
@@ -69,8 +68,7 @@ class DiffCoverageRunner(
                         }
                         else -> lineData.setStatus(LineCoverage.NONE)
                     }
-                    lineData.hits =
-                        if (methodLineStatus == ICounter.FULLY_COVERED || methodLineStatus == ICounter.PARTLY_COVERED) 1 else 0
+                    lineData.hits = computeHits(methodLineStatus)
                     var coveredCount = methodLine.branchCounter.coveredCount
                     for (b in 0 until methodLine.branchCounter.totalCount) {
                         val jump = lineData.addJump(b)
@@ -86,6 +84,10 @@ class DiffCoverageRunner(
             }
             classData.setLines(lines)
         }
+    }
+
+    private fun computeHits(methodLineStatus: Int): Int {
+        return if (methodLineStatus == ICounter.FULLY_COVERED || methodLineStatus == ICounter.PARTLY_COVERED) 1 else 0
     }
 
     private fun getCoverageBuilder(): CoverageBuilder {
@@ -113,7 +115,7 @@ class DiffCoverageRunner(
     private fun buildAnalyzer(
         coverageVisitor: ICoverageVisitor
     ): FilteringAnalyzer {
-        val codeUpdateInfo = project.service<LocalChangesService>().obtainCodeUpdateInfo()
+        val codeUpdateInfo = project.service<ModifiedFilesService>().obtainCodeUpdateInfo()
         return FilteringAnalyzer(
             loadCoverage(),
             coverageVisitor,
@@ -125,11 +127,7 @@ class DiffCoverageRunner(
 
     private fun loadCoverage(): ExecutionDataStore = ExecFileLoader().apply {
         execFilesPaths.forEach {
-            try {
-                load(it.toFile())
-            } catch (e: IOException) {
-                throw RuntimeException("Cannot load coverage data from file: $it", e)
-            }
+            load(it.toFile())
         }
     }.executionDataStore
 

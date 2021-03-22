@@ -27,8 +27,7 @@ class RunDiffCoverageAction : AnAction() {
 
         if (!project.service<GradleService>().isGradleProject()) {
             Messages.showMessageDialog(
-                project, "" +
-                        "Not a Gradle project", "DiffCoverage plugin", Messages.getWarningIcon()
+                project, "Not a Gradle project", "DiffCoverage plugin", Messages.getWarningIcon()
             )
             return
         }
@@ -52,7 +51,7 @@ class RunDiffCoverageAction : AnAction() {
         val defaultDiffCoverageReportPath = "diffCoverage/html/index.html"
         val reportUrl = Paths.get(diffCoverageInfo.reportsRoot, defaultDiffCoverageReportPath).toUri().toString()
 
-        val reportLink = """<a href="$reportUrl">Diff coverage report</a>""".trimIndent()
+        val reportLink = """<a href="$reportUrl">Diff coverage report</a>"""
         Notifications.Bus.notify(
             Notification(
                 "",

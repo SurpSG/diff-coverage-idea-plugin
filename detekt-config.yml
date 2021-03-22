@@ -1,6 +1,32 @@
 # Default detekt configuration:
 # https://github.com/detekt/detekt/blob/master/detekt-core/src/main/resources/default-detekt-config.yml
 
-formatting:
-  Indentation:
+style:
+  WildcardImport:
+    active: false
+  ReturnCount:
+    active: false
+  LoopWithTooManyJumpStatements:
     active: true
+    maxJumpCount: 3
+
+formatting:
+  NoWildcardImports:
+    active: false
+  Indentation:
+    active: false
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+
+complexity:
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 12
+  NestedBlockDepth:
+    active: true
+    threshold: 6 # TODO set to 3

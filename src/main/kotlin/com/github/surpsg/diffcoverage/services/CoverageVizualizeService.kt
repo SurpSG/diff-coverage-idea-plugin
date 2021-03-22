@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.io.File
+import java.nio.file.Path
 
 @Service
 class CoverageVizualizeService(private val project: Project) {
@@ -20,22 +21,23 @@ class CoverageVizualizeService(private val project: Project) {
     }
 
     private fun buildCoverageSuite(coverageInfo: DiffCoverageConfiguration): CoverageSuite {
-        val classesPath = coverageInfo.classes.asSequence()
-            .map(::File).filter(File::exists)
-            .map(File::toPath).toSet()
-
-        val execFiles = coverageInfo.execFiles.asSequence()
-            .map(::File).filter(File::exists)
-            .map(File::toPath).toSet()
+        val classesPaths = toPaths(coverageInfo.classes)
+        val execFiles = toPaths(coverageInfo.execFiles)
 
         return coverageEngine().createCoverageSuite(
-            DiffCoverageRunner(project, classesPath, execFiles),
+            DiffCoverageRunner(project, classesPaths, execFiles),
             "DiffCoverage",
             DefaultCoverageFileProvider(execFiles.first().toFile()),
             null,
             System.currentTimeMillis(),
             null, false, true, false, project
         ) ?: throw RuntimeException("Cannot create coverage suite")
+    }
+
+    private fun toPaths(values: Collection<String>): Set<Path> {
+        return values.asSequence()
+            .map(::File).filter(File::exists)
+            .map(File::toPath).toSet()
     }
 
     private fun coverageEngine(): CoverageEngine = CoverageEngine.EP_NAME.findExtension(DiffCoverageEngine::class.java)
