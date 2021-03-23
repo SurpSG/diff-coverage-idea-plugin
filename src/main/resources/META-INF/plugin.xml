@@ -1,7 +1,13 @@
 <idea-plugin>
     <id>com.github.surpsg.diffcoverage</id>
     <name>Diff Coverage</name>
-    <vendor>surpsg</vendor>
+    <vendor url="https://github.com/SurpSG/diff-coverage-idea-plugin" email="surpsg2012@gmail.com">SurpSG</vendor>
+    <description><![CDATA[
+    Diff Coverage plugin provides integration of <a href="https://github.com/form-com/diff-coverage-gradle">Diff Coverage</a> Gradle plugin into your IDE.
+  ]]></description>
+
+    <change-notes>Initial release of the plugin.</change-notes>
+    <version>0.0.1</version>
 
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
@@ -23,11 +29,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <javaCoverageEngineExtension
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageExtensionPoint"
-                order = "last"/>
+                order="last"/>
 
         <coverageEngine
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
-                order = "last"/>
+                order="last"/>
 
         <notification.parentGroup id="diff.coverage.notification" title="Diff Coverage notifications"/>
         <notification.group parentId="diff.coverage.notification" groupId="diff.coverage.notification.balloon"/>
