@@ -24,6 +24,10 @@ Diff coverage IDEA plugin does:
 - [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html).
 - [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
 
+<!-- Plugin description -->
+
+<!-- Plugin description end -->
+
 ## Installation
 
 - Using IDE built-in plugin system:
