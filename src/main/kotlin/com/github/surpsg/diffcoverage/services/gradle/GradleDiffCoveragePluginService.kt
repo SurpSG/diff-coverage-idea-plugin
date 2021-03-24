@@ -84,7 +84,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         return projectsWithDiffCoverPlugin
     }
 
-    suspend fun obtainCacheableDiffCoverageInfo(projectIdToPath: Pair<String, String>): DiffCoverageConfiguration {
+    suspend fun obtainCacheableDiffCoverageInfo(projectIdToPath: Pair<String, String>): DiffCoverageConfiguration? {
         return project.service<CacheService>().suspendableGetCached {
             withContext(BACKGROUND_SCOPE.coroutineContext) {
                 collectDiffCoverageInfo(projectIdToPath).asDeferred().await()
@@ -94,7 +94,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
 
     private fun collectDiffCoverageInfo(
         projectIdToPath: Pair<String, String>
-    ): CompletableFuture<DiffCoverageConfiguration> {
+    ): CompletableFuture<DiffCoverageConfiguration?> {
         val settings = ExternalSystemTaskExecutionSettings().apply {
             executionName = DiffCoverageBundle.message(DIFF_COVERAGE_COLLECT_INFO)
             externalProjectPath = projectIdToPath.second
@@ -110,7 +110,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
             putUserData(ExternalSystemRunConfiguration.PROGRESS_LISTENER_KEY, SyncViewManager::class.java)
         }
 
-        return CompletableFuture<DiffCoverageConfiguration>().apply {
+        return CompletableFuture<DiffCoverageConfiguration?>().apply {
             ExternalSystemUtil.runTask(
                 settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID,
                 object : TaskCallback {
@@ -127,7 +127,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                                 notificationType = NotificationType.ERROR,
                                 message = it
                             )
-                            completeExceptionally(RuntimeException(it))
+                            complete(null)
                         }
                     }
                 },

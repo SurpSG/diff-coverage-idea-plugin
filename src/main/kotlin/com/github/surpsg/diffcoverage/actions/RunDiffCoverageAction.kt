@@ -42,11 +42,12 @@ class RunDiffCoverageAction : AnAction() {
             ?: return
 
         BACKGROUND_SCOPE.launch {
-            val coverageInfo = diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)
-            project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
-                showDiffCoverageReportNotification(coverageInfo, project)
+            diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)?.let { coverageInfo ->
+                project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
+                    showDiffCoverageReportNotification(coverageInfo, project)
+                }
+                project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
             }
-            project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
         }
     }
 
