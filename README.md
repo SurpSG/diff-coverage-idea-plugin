@@ -1,8 +1,8 @@
 # diff-coverage-idea-plugin
 
 ![Build](https://github.com/SurpSG/diff-coverage-idea-plugin/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
+[![Version](https://img.shields.io/jetbrains/plugin/v/16392-diff-coverage.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/16392-diff-coverage.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 
 * Create or open gradle project
 * Apply and setup [diff coverage plugin](https://github.com/form-com/diff-coverage-gradle)
