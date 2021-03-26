@@ -4,12 +4,13 @@
     <vendor url="https://github.com/SurpSG/diff-coverage-idea-plugin" email="surpsg2012@gmail.com">SurpSG</vendor>
     <description><![CDATA[
     Provides integration of <a href="https://github.com/form-com/diff-coverage-gradle">Diff Coverage</a> Gradle plugin into your IDE.
-
+    <br/>
     Diff Coverage plugin:
-    * runs `diffCoverage` Gradle task on shortcut `ctrl+shift+d`
-    * analyzes coverage for uncommitted code
-    * highlights coverage for uncommitted code in IDE and shows popup with link to standard <a href="https://github.com/form-com/diff-coverage-gradle#html-report-example">HTML coverage report</a>
-
+    <ul>
+    <li> runs `diffCoverage` Gradle task on shortcut `ctrl+shift+d`</li>
+    <li> analyzes coverage for uncommitted code</li>
+    <li> highlights coverage for uncommitted code in IDE and shows popup with link to standard <a href="https://github.com/form-com/diff-coverage-gradle#html-report-example">HTML coverage report</a></li>
+    </ul>
   ]]></description>
 
     <change-notes>Initial release of the plugin.</change-notes>
