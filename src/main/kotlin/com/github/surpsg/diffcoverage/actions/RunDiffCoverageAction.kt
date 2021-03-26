@@ -36,11 +36,8 @@ class RunDiffCoverageAction : AnAction() {
             return
         }
 
-        val settings: GradleProjectSettings = GradleSettings.getInstance(project).linkedProjectsSettings.first()
-
         val diffCoveragePluginService = project.service<GradleDiffCoveragePluginService>()
-        val diffCoverageModule = diffCoveragePluginService.lookupDiffCoveragePluginModule(settings.externalProjectPath)
-            ?: return
+        val diffCoverageModule = diffCoveragePluginService.lookupDiffCoveragePluginModule() ?: return
 
         BACKGROUND_SCOPE.launch {
             diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)?.let { coverageInfo ->

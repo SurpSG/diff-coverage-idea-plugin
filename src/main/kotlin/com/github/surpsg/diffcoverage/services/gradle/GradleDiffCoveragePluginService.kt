@@ -42,8 +42,10 @@ import java.util.concurrent.CompletableFuture
 @Service
 class GradleDiffCoveragePluginService(private val project: Project) {
 
-    fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
+    fun lookupDiffCoveragePluginModule(): Pair<String, String>? {
         val diffCoverageModule = getDiffCoverageModule() ?: return null
+
+        val rootModulePath = getRootModulePath()
         val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
         return GradleUtil.findGradleModuleData(project, rootModulePath)
             ?.parent
@@ -78,6 +80,10 @@ class GradleDiffCoveragePluginService(private val project: Project) {
             return null
         }
         return diffPluginAppliedTo.first().value.first()
+    }
+
+    private fun getRootModulePath(): String {
+        return GradleSettings.getInstance(project).linkedProjectsSettings.first().externalProjectPath
     }
 
     private fun normalizeModuleKey(rootModulePath: String, moduleKey: String): String {
@@ -135,9 +141,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                     override fun onSuccess() {
                         val diffContent = getDiffCoverageConfigFile(projectIdToPath.second)
                             .readText().replace("\\", "\\\\")
-                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(
-                            diffContent
-                        )
+                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffContent)
                         complete(diffCoverageInfo)
                     }
 
