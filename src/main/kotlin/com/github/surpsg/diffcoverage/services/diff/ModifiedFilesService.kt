@@ -43,6 +43,7 @@ class ModifiedFilesService(private var project: Project) {
             ChangeListManager.getInstance(project).changeLists.asSequence()
                 .flatMap { it.changes.asSequence() }
                 .map(::buildTextFilePatch)
+                .filter { it.afterName != null }
                 .map(::toFileChange)
                 .toList()
         }
