@@ -66,7 +66,7 @@ class GradleDiffCoveragePluginService(private val project: Project) {
         return if (moduleKey == ROOT_PROJECT_KEY) {
             Paths.get(rootModulePath).fileName.toString()
         } else {
-            rootModulePath
+            moduleKey
         }
     }
 
