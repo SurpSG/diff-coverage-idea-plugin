@@ -23,15 +23,6 @@
     <depends>com.intellij.modules.java</depends>
     <depends>Coverage</depends>
 
-    <actions>
-        <action id="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction"
-                class="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction" text="Diff Coverage"
-                description="Diff coverage">
-            <add-to-group group-id="RunTestGroup" anchor="last"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl D"/>
-        </action>
-    </actions>
-
     <extensions defaultExtensionNs="com.intellij">
         <javaCoverageEngineExtension
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngineExtension"
@@ -40,6 +31,9 @@
         <coverageEngine
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
                 order="last"/>
+
+        <configurationType
+                implementation="com.github.surpsg.diffcoverage.runconfiguration.DiffCoverageRunConfigurationType"/>
 
         <notificationGroup id="diff.coverage.notification"
                            bundle="messages.DiffCoverageBundle"
