@@ -1,76 +1,77 @@
-package com.github.surpsg.diffcoverage.actions
+package com.github.surpsg.diffcoverage.runconfiguration
 
 import com.github.surpsg.diffcoverage.DiffCoverageBundle
 import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
+import com.github.surpsg.diffcoverage.domain.gradle.GradleModule
 import com.github.surpsg.diffcoverage.properties.NOT_GRADLE_PROJECT
 import com.github.surpsg.diffcoverage.properties.REPORT_LINK
 import com.github.surpsg.diffcoverage.properties.REPORT_LINK_WITH_ERROR
-import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_TASK
 import com.github.surpsg.diffcoverage.properties.gradle.HTML_REPORT_RELATIVE_PATH
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
-import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoveragePluginService
+import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoveragePluginSettingsService
+import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoverageRunService
 import com.github.surpsg.diffcoverage.services.gradle.GradleService
 import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
+import com.intellij.execution.ExecutionResult
+import com.intellij.execution.Executor
+import com.intellij.execution.configurations.RunProfileState
+import com.intellij.execution.runners.ProgramRunner
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
-import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
-import org.jetbrains.plugins.gradle.settings.GradleSettings
 import java.nio.file.Paths
 
-class RunDiffCoverageAction : AnAction() {
+class DiffCoverageRunProfileState(
+    private val project: Project,
+    private val diffCoverageRunConfiguration: DiffCoverageRunConfiguration
+) : RunProfileState {
 
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-
-        if (!project.service<GradleService>().isGradleProject()) {
+    override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult? {
+        if (project.service<GradleService>().isGradleProject()) {
+            buildDiffCoverage()
+        } else {
             project.service<BalloonNotificationService>().notify(
                 notificationType = NotificationType.ERROR,
                 message = DiffCoverageBundle.message(NOT_GRADLE_PROJECT)
             )
-            return
         }
+        return null
+    }
 
-        val settings: GradleProjectSettings = GradleSettings.getInstance(project).linkedProjectsSettings.first()
-
-        val diffCoveragePluginService = project.service<GradleDiffCoveragePluginService>()
-        val diffCoverageModule = diffCoveragePluginService.lookupDiffCoveragePluginModule(settings.externalProjectPath)
-            ?: return
-
-        BACKGROUND_SCOPE.launch {
-            diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)?.let { coverageInfo ->
-                launch {
-                    project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
-                }
-                buildCoverageReportByGradlePlugin(project, diffCoverageModule.second, coverageInfo)
+    private fun buildDiffCoverage() = BACKGROUND_SCOPE.launch {
+        val module = project.service<GradleDiffCoveragePluginSettingsService>().lookupDiffCoveragePluginModule()
+            ?: return@launch
+        project.service<GradleDiffCoverageRunService>().obtainCacheableDiffCoverageInfo(module)?.let { coverageInfo ->
+            launch {
+                buildCoverageReportByGradlePlugin(module, coverageInfo)
             }
+            buildReportIde(coverageInfo)
+        }
+    }
+
+    private fun buildReportIde(coverageInfo: DiffCoverageConfiguration) {
+        if (diffCoverageRunConfiguration.buildReportByIde) {
+            project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
         }
     }
 
     private suspend fun buildCoverageReportByGradlePlugin(
-        project: Project,
-        modulePath: String,
+        gradleModule: GradleModule,
         coverageInfo: DiffCoverageConfiguration
     ) {
-        val successExecute = project.service<GradleService>().suspendableExecuteGradleTask(
-            DIFF_COVERAGE_TASK,
-            modulePath
-        )
+        val successExecute = project.service<GradleDiffCoverageRunService>().runDiffCoverageTask(gradleModule)
         val messageKeyToNotificationType = if (successExecute) {
             REPORT_LINK to NotificationType.INFORMATION
         } else {
             REPORT_LINK_WITH_ERROR to NotificationType.ERROR
         }
-        showDiffCoverageReportNotification(project, coverageInfo, messageKeyToNotificationType)
+        showDiffCoverageReportNotification(coverageInfo, messageKeyToNotificationType)
     }
 
     private fun showDiffCoverageReportNotification(
-        project: Project,
         diffCoverageInfo: DiffCoverageConfiguration,
         messageKeyToNotificationType: Pair<String, NotificationType>
     ) {
@@ -81,6 +82,4 @@ class RunDiffCoverageAction : AnAction() {
             message = DiffCoverageBundle.message(messageKeyToNotificationType.first, reportUrl)
         )
     }
-
-    override fun isDumbAware(): Boolean = false
 }
