@@ -8,7 +8,7 @@ import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.components.service
 import java.io.File
 
-class DiffCoverageExtensionPoint : JavaCoverageEngineExtension() {
+class DiffCoverageEngineExtension : JavaCoverageEngineExtension() {
 
     override fun isApplicableTo(conf: RunConfigurationBase<*>?): Boolean = false
 

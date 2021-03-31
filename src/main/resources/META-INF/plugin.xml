@@ -21,7 +21,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.gradle</depends>
     <depends>com.intellij.modules.java</depends>
-    <depends>com.intellij.modules.coverage</depends>
     <depends>Coverage</depends>
 
     <actions>
@@ -35,7 +34,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <javaCoverageEngineExtension
-                implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageExtensionPoint"
+                implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngineExtension"
                 order="last"/>
 
         <coverageEngine
