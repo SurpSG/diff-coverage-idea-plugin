@@ -7,7 +7,6 @@ import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO
 import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO_FAILED
-import com.github.surpsg.diffcoverage.properties.MULTIPLE_DIFF_COVERAGE_ENTRIES
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_CONFIGURATION_PROPERTY
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_CONFIG_FILE_NAME
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_FAKE_TASK
@@ -15,6 +14,7 @@ import com.github.surpsg.diffcoverage.services.CacheService
 import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
 import com.intellij.build.SyncViewManager
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -43,16 +43,7 @@ import java.util.concurrent.CompletableFuture
 class GradleDiffCoveragePluginService(private val project: Project) {
 
     fun lookupDiffCoveragePluginModule(rootModulePath: String): Pair<String, String>? {
-        val diffPluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
-        if (diffPluginAppliedTo.size > 1 || diffPluginAppliedTo.first().value.size > 1) {
-            project.service<BalloonNotificationService>().notify(
-                notificationType = NotificationType.ERROR,
-                message = DiffCoverageBundle.message(MULTIPLE_DIFF_COVERAGE_ENTRIES)
-            )
-            return null
-        }
-
-        val diffCoverageModule = diffPluginAppliedTo.first().value.first()
+        val diffCoverageModule = getDiffCoverageModule() ?: return null
         val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
         return GradleUtil.findGradleModuleData(project, rootModulePath)
             ?.parent
@@ -60,6 +51,33 @@ class GradleDiffCoveragePluginService(private val project: Project) {
             ?.find { it.data.id == diffCoverageModuleKey }
             ?.data
             ?.let { diffCoverageModule to it.linkedExternalProjectPath }
+    }
+
+    private fun getDiffCoverageModule(): String? {
+        val diffPluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
+        if (diffPluginAppliedTo.isEmpty() || diffPluginAppliedTo.first().value.isEmpty()) {
+            project.service<BalloonNotificationService>().notify(
+                notificationType = NotificationType.ERROR,
+                notificationListener = NotificationListener.URL_OPENING_LISTENER,
+                message = DiffCoverageBundle.message("no.diff.coverage.entries")
+            )
+            return null
+        }
+        if (diffPluginAppliedTo.size > 1 || diffPluginAppliedTo.first().value.size > 1) {
+            project.service<BalloonNotificationService>().notify(
+                notificationType = NotificationType.ERROR,
+                message = DiffCoverageBundle.message(
+                    "multiple.diff.coverage.entries",
+                    diffPluginAppliedTo.asSequence().flatMap { entry ->
+                        entry.value.asSequence().map {
+                            String.format("%s%s", File(entry.key).name, it)
+                        }
+                    }.joinToString("\n", limit = 3)
+                )
+            )
+            return null
+        }
+        return diffPluginAppliedTo.first().value.first()
     }
 
     private fun normalizeModuleKey(rootModulePath: String, moduleKey: String): String {
@@ -117,7 +135,9 @@ class GradleDiffCoveragePluginService(private val project: Project) {
                     override fun onSuccess() {
                         val diffContent = getDiffCoverageConfigFile(projectIdToPath.second)
                             .readText().replace("\\", "\\\\")
-                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffContent)
+                        val diffCoverageInfo = jacksonObjectMapper().readValue<DiffCoverageConfiguration>(
+                            diffContent
+                        )
                         complete(diffCoverageInfo)
                     }
 
