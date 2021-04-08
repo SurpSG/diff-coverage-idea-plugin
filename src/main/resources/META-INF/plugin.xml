@@ -41,7 +41,9 @@
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
                 order="last"/>
 
-        <notification.parentGroup id="diff.coverage.notification" title="Diff Coverage notifications"/>
-        <notification.group parentId="diff.coverage.notification" groupId="diff.coverage.notification.balloon"/>
+        <notificationGroup id="diff.coverage.notification"
+                           bundle="messages.DiffCoverageBundle"
+                           displayType="TOOL_WINDOW"
+                           key="diff.coverage.notification.group.name"/>
     </extensions>
 </idea-plugin>
