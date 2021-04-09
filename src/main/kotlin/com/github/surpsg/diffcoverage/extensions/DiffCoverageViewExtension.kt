@@ -1,5 +1,6 @@
 package com.github.surpsg.diffcoverage.extensions
 
+import com.form.diff.ClassFile
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.coverage.CoverageSuitesBundle
 import com.intellij.coverage.JavaCoverageAnnotator
@@ -12,9 +13,7 @@ import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiPackage
+import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import java.io.File
 import java.nio.file.Paths
@@ -28,89 +27,77 @@ class DiffCoverageViewExtension(
     annotator, project, suitesBundle, stateBean
 ) {
 
-    override fun getChildrenNodes(node: AbstractTreeNode<*>?): List<AbstractTreeNode<*>> {
-        val children: MutableList<AbstractTreeNode<*>> = ArrayList()
+    private val codeUpdateInfo = myProject.service<ModifiedFilesService>().obtainCodeUpdateInfo()
+    private val packageCoverageData = PackageCoverageData(myProject)
 
+    override fun getChildrenNodes(node: AbstractTreeNode<*>?): List<AbstractTreeNode<*>> {
         if (node !is CoverageListNode || node.getValue() is PsiClass) {
-            return children
+            return emptyList()
         }
+
+        var children: Sequence<AbstractTreeNode<*>> = emptySequence()
         val nodeValue = node.getValue()
         if (nodeValue is PsiPackage) {
-            val packageCoverageData = PackageCoverageData(myProject)
-            if (isInCoverageScope(packageCoverageData, nodeValue)) {
-                directChildrenSequence(nodeValue, PsiPackage::getSubPackages).forEach { subPackage ->
-                    processSubPackage(packageCoverageData, subPackage, children)
-                }
-                directChildrenSequence(nodeValue, PsiPackage::getFiles).forEach { file ->
-                    collectFileChildren(file, node, children)
-                }
-            } else if (!myStateBean.myFlattenPackages) {
-                collectSubPackages(packageCoverageData, children, nodeValue)
-            }
+            children += collectClasses(nodeValue)
         }
         if (node is CoverageListRootNode) {
-            mySuitesBundle.suites.asSequence()
+            children += mySuitesBundle.suites.asSequence()
                 .flatMap { mySuitesBundle.suites.asSequence() }
                 .map { suite -> suite as JavaCoverageSuite }
                 .flatMap { it.getCurrentSuiteClasses(myProject) }
-                .forEach {
-                    children += CoverageListNode(myProject, it, mySuitesBundle, myStateBean)
-                }
+                .map { CoverageListNode(myProject, it, mySuitesBundle, myStateBean) }
         }
 
-        return children.onEach {
-            it.parent = node
-        }
+        return children.onEach { it.parent = node }.toList()
     }
 
-    private fun <T> directChildrenSequence(
-        nodePackage: PsiPackage,
+    private fun collectClasses(psiPackage: PsiPackage): Sequence<AbstractTreeNode<*>> {
+        var children = emptySequence<AbstractTreeNode<*>>()
+        val currentPackages = ArrayDeque<PsiPackage>().apply { this += psiPackage }
+        while (!currentPackages.isEmpty()) {
+            val currentPackage = currentPackages.removeFirst()
+            if (getInReadThread { !currentPackage.isValid }) {
+                continue
+            }
+
+            if (packageCoverageData.isPackageInScope(currentPackage)) {
+                children += currentPackage.directChildrenSequence(PsiPackage::getFiles).flatMap { file ->
+                    collectChildrenClasses(file)
+                }
+            }
+
+            currentPackage.directChildrenSequence(PsiPackage::getSubPackages)
+                .filter { packageCoverageData.isParentPackageForDiffPackages(it) }
+                .forEach { currentPackages += it }
+        }
+        return children
+    }
+
+    private fun <T> PsiPackage.directChildrenSequence(
         childrenItemsGetter: (PsiPackage, GlobalSearchScope) -> Array<T>
     ): Sequence<T> {
-        return ReadAction.compute<Sequence<T>, RuntimeException> {
-            if (nodePackage.isValid) {
-                childrenItemsGetter(nodePackage, getSearchScope()).asSequence()
-            } else {
-                emptySequence()
-            }
+        return getValidValue(emptySequence()) {
+            val searchScope = mySuitesBundle.getSearchScope(myProject)
+            childrenItemsGetter(this, searchScope).asSequence()
         }
     }
 
-    private fun getSearchScope(): GlobalSearchScope {
-        return mySuitesBundle.getSearchScope(myProject)
-    }
-
-    private fun collectSubPackages(
-        packageCoverageData: PackageCoverageData,
-        children: MutableList<AbstractTreeNode<*>>,
-        rootPackage: PsiPackage
-    ) {
-        ReadAction.compute<Array<PsiPackage>, RuntimeException> {
-            rootPackage.getSubPackages(getSearchScope())
-        }.forEach {
-            processSubPackage(packageCoverageData, it, children)
+    private fun collectChildrenClasses(file: PsiFile): Sequence<AbstractTreeNode<*>> {
+        return if (file is PsiClassOwner) {
+            file.getValidValue(PsiClass.EMPTY_ARRAY, PsiClassOwner::getClasses)
+                .asSequence()
+                .filter { isFileModified(it) }
+                .map { CoverageListNode(myProject, it, mySuitesBundle, myStateBean) }
+        } else {
+            emptySequence()
         }
     }
 
-    private fun processSubPackage(
-        packageCoverageData: PackageCoverageData,
-        aPackage: PsiPackage,
-        children: MutableList<AbstractTreeNode<*>>
-    ) {
-        if (isInCoverageScope(packageCoverageData, aPackage)) {
-            children += CoverageListNode(myProject, aPackage, mySuitesBundle, myStateBean)
-        } else if (!myStateBean.myFlattenPackages) {
-            collectSubPackages(packageCoverageData, children, aPackage)
-        }
-        if (myStateBean.myFlattenPackages) {
-            collectSubPackages(packageCoverageData, children, aPackage)
-        }
-    }
+    private fun isFileModified(psiClass: PsiClass): Boolean {
+        val qualifiedClassName = psiClass.getValidValue(null) { qualifiedName } ?: return false
+        val classFile = ClassFile(psiClass.containingFile.name, qualifiedClassName)
 
-    private fun isInCoverageScope(packageCoverageData: PackageCoverageData, element: PsiElement): Boolean {
-        return ReadAction.compute<Boolean, RuntimeException> {
-            element is PsiPackage && packageCoverageData.isPackageInScope(element)
-        }
+        return codeUpdateInfo.isInfoExists(classFile)
     }
 
     class PackageCoverageData(project: Project) {
@@ -120,8 +107,37 @@ class DiffCoverageViewExtension(
             .map { it.replace(File.separator, ".") }
             .toSet()
 
-        fun isPackageInScope(psiPackage: PsiPackage): Boolean = diffPackages.any {
-            it.endsWith(psiPackage.qualifiedName)
+        fun isPackageInScope(psiPackage: PsiPackage): Boolean {
+            return psiPackage.isPackageFiltered { packageCandidate, diffPackage ->
+                diffPackage.endsWith(packageCandidate)
+            }
+        }
+
+        fun isParentPackageForDiffPackages(psiPackage: PsiPackage): Boolean {
+            return psiPackage.isPackageFiltered { packageCandidate, diffPackage ->
+                diffPackage.contains(packageCandidate)
+            }
+        }
+
+        private fun PsiPackage.isPackageFiltered(
+            filterCondition: (String, String) -> Boolean
+        ): Boolean {
+            val qualifiedNamePackage = ReadAction.compute<String, RuntimeException>(::getQualifiedName)
+            return diffPackages.any { filterCondition(qualifiedNamePackage, it) }
+        }
+    }
+
+    private fun <T> getInReadThread(func: () -> T): T {
+        return ReadAction.compute<T, RuntimeException>(func)
+    }
+
+    private fun <T : PsiElement, V> T.getValidValue(defaultValue: V, valueGetter: T.() -> V): V {
+        return getInReadThread {
+            if (isValid) {
+                valueGetter()
+            } else {
+                defaultValue
+            }
         }
     }
 }

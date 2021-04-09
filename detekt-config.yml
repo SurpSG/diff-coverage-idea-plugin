@@ -24,3 +24,7 @@ complexity:
   NestedBlockDepth:
     active: true
     threshold: 6 # TODO set to 3
+
+formatting:
+  NoWildcardImports:
+    active: false
