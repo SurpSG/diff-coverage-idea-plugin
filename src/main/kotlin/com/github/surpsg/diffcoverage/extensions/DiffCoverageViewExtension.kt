@@ -4,9 +4,7 @@ import com.form.diff.ClassFile
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
 import com.intellij.coverage.CoverageSuitesBundle
 import com.intellij.coverage.JavaCoverageAnnotator
-import com.intellij.coverage.JavaCoverageSuite
 import com.intellij.coverage.view.CoverageListNode
-import com.intellij.coverage.view.CoverageListRootNode
 import com.intellij.coverage.view.CoverageViewManager
 import com.intellij.coverage.view.JavaCoverageViewExtension
 import com.intellij.ide.util.treeView.AbstractTreeNode
@@ -34,20 +32,11 @@ class DiffCoverageViewExtension(
         if (node !is CoverageListNode || node.getValue() is PsiClass) {
             return emptyList()
         }
-
         var children: Sequence<AbstractTreeNode<*>> = emptySequence()
         val nodeValue = node.getValue()
         if (nodeValue is PsiPackage) {
             children += collectClasses(nodeValue)
         }
-        if (node is CoverageListRootNode) {
-            children += mySuitesBundle.suites.asSequence()
-                .flatMap { mySuitesBundle.suites.asSequence() }
-                .map { suite -> suite as JavaCoverageSuite }
-                .flatMap { it.getCurrentSuiteClasses(myProject) }
-                .map { CoverageListNode(myProject, it, mySuitesBundle, myStateBean) }
-        }
-
         return children.onEach { it.parent = node }.toList()
     }
 
