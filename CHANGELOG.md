@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 ### Fixed
+- Don't display all packages on code coverage view with checked 'Flatten Packages' 
+
+## [0.0.4]
+### Fixed
 - Intellij 2021.1 compatibility
 ### Changed
 - Code coverage classes list flat structure
