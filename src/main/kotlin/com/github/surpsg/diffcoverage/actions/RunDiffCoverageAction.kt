@@ -5,6 +5,7 @@ import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
 import com.github.surpsg.diffcoverage.properties.NOT_GRADLE_PROJECT
 import com.github.surpsg.diffcoverage.properties.REPORT_LINK
+import com.github.surpsg.diffcoverage.properties.REPORT_LINK_WITH_ERROR
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_TASK
 import com.github.surpsg.diffcoverage.properties.gradle.HTML_REPORT_RELATIVE_PATH
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
@@ -43,19 +44,41 @@ class RunDiffCoverageAction : AnAction() {
 
         BACKGROUND_SCOPE.launch {
             diffCoveragePluginService.obtainCacheableDiffCoverageInfo(diffCoverageModule)?.let { coverageInfo ->
-                project.service<GradleService>().executeGradleTask(DIFF_COVERAGE_TASK, diffCoverageModule.second) {
-                    showDiffCoverageReportNotification(coverageInfo, project)
+                launch {
+                    project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
                 }
-                project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
+                buildCoverageReportByGradlePlugin(project, diffCoverageModule.second, coverageInfo)
             }
         }
     }
 
-    private fun showDiffCoverageReportNotification(diffCoverageInfo: DiffCoverageConfiguration, project: Project) {
+    private suspend fun buildCoverageReportByGradlePlugin(
+        project: Project,
+        modulePath: String,
+        coverageInfo: DiffCoverageConfiguration
+    ) {
+        val successExecute = project.service<GradleService>().suspendableExecuteGradleTask(
+            DIFF_COVERAGE_TASK,
+            modulePath
+        )
+        val messageKeyToNotificationType = if (successExecute) {
+            REPORT_LINK to NotificationType.INFORMATION
+        } else {
+            REPORT_LINK_WITH_ERROR to NotificationType.ERROR
+        }
+        showDiffCoverageReportNotification(project, coverageInfo, messageKeyToNotificationType)
+    }
+
+    private fun showDiffCoverageReportNotification(
+        project: Project,
+        diffCoverageInfo: DiffCoverageConfiguration,
+        messageKeyToNotificationType: Pair<String, NotificationType>
+    ) {
         val reportUrl = Paths.get(diffCoverageInfo.reportsRoot, HTML_REPORT_RELATIVE_PATH).toUri().toString()
         project.service<BalloonNotificationService>().notify(
+            messageKeyToNotificationType.second,
             notificationListener = NotificationListener.URL_OPENING_LISTENER,
-            message = DiffCoverageBundle.message(REPORT_LINK, reportUrl)
+            message = DiffCoverageBundle.message(messageKeyToNotificationType.first, reportUrl)
         )
     }
 
