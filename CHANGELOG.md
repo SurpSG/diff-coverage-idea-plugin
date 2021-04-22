@@ -6,7 +6,8 @@
 ### Changed
 - Diff Coverage run configuration instead of shortcut
 ### Fixed
-- Don't display all packages on code coverage view with checked 'Flatten Packages' 
+- Show Diff Coverage report notification if `diffCoverage` Gradle task failed due to violation rules
+- Don't display all packages on code coverage view with checked 'Flatten Packages'
 
 ## [0.0.4]
 ### Fixed
