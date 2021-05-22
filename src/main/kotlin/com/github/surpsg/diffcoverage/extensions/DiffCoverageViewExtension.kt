@@ -84,7 +84,9 @@ class DiffCoverageViewExtension(
 
     private fun isFileModified(psiClass: PsiClass): Boolean {
         val qualifiedClassName = psiClass.getValidValue(null) { qualifiedName } ?: return false
-        val classFile = ClassFile(psiClass.containingFile.name, qualifiedClassName)
+        val classFile = getInReadThread {
+            ClassFile(psiClass.containingFile.name, qualifiedClassName)
+        }
 
         return codeUpdateInfo.isInfoExists(classFile)
     }

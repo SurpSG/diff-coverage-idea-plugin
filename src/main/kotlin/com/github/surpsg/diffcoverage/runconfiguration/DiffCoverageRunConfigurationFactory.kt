@@ -18,6 +18,10 @@ class DiffCoverageRunConfigurationFactory(
         )
     }
 
+    override fun getId(): String {
+        return NAME
+    }
+
     override fun getName(): String {
         return NAME
     }

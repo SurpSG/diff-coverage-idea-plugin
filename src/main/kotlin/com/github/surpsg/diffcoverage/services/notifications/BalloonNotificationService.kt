@@ -10,13 +10,14 @@ import com.intellij.openapi.project.Project
 class BalloonNotificationService(private val project: Project) {
 
     fun notify(
+        title: String = DiffCoverageBundle.message(PLUGIN_NAME),
         notificationType: NotificationType = NotificationType.INFORMATION,
         notificationListener: NotificationListener? = null,
         message: String
     ) {
         Notifications.Bus.notify(
             getNotificationGroup().createNotification(
-                DiffCoverageBundle.message(PLUGIN_NAME),
+                title,
                 message,
                 notificationType,
                 notificationListener
