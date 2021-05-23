@@ -16,8 +16,7 @@ class DiffCoverageRunConfiguration(
     name: String
 ) : RunConfigurationBase<Any?>(project, factory, name) {
 
-    var buildReportByIde: Boolean = DEFAULT_BUILD_BY_IDE
-    var buildReportByGradlePlugin: Boolean = DEFAULT_BUILD_BY_GRADLE
+    var minCoveragePercents: Int = DEFAULT_MIN_COVERAGE
 
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
         return DiffCoverageRunConfigurationEditor()
@@ -32,34 +31,36 @@ class DiffCoverageRunConfiguration(
 
     override fun readExternal(element: Element) {
         super.readExternal(element)
-        buildReportByIde = element.readBooleanChildOrDefault(BUILD_BY_IDE_KEY, DEFAULT_BUILD_BY_IDE)
-        buildReportByGradlePlugin = element.readBooleanChildOrDefault(BUILD_BY_GRADLE_KEY, DEFAULT_BUILD_BY_GRADLE)
+        minCoveragePercents = element.readChildOrDefault(MIN_COVERAGE_KEY, DEFAULT_MIN_COVERAGE) {
+            it.toInt()
+        }
     }
 
-    private fun Element.readBooleanChildOrDefault(key: String, default: Boolean): Boolean = getChild(key)?.let {
-        it.text.toBoolean()
-    } ?: default
+    private fun <T> Element.readChildOrDefault(
+        key: String,
+        default: T,
+        buildValue: (String) -> T
+    ): T {
+        return getChild(key)
+            ?.let { buildValue(it.text) }
+            ?: default
+    }
 
     override fun writeExternal(element: Element) {
         super.writeExternal(element)
         element.apply {
             addContent(
-                BUILD_BY_GRADLE_KEY.elementWithValue(buildReportByGradlePlugin)
-            )
-            addContent(
-                BUILD_BY_IDE_KEY.elementWithValue(buildReportByIde)
+                MIN_COVERAGE_KEY.elementWithValue(minCoveragePercents)
             )
         }
     }
 
-    private fun String.elementWithValue(value: Boolean) = Element(this).apply {
+    private fun String.elementWithValue(value: Any) = Element(this).apply {
         text = value.toString()
     }
 
     companion object {
-        const val BUILD_BY_IDE_KEY = "buildByIde"
-        const val BUILD_BY_GRADLE_KEY = "buildByGradle"
-        const val DEFAULT_BUILD_BY_IDE = true
-        const val DEFAULT_BUILD_BY_GRADLE = false
+        const val DEFAULT_MIN_COVERAGE = 90
+        const val MIN_COVERAGE_KEY = "minCoverage"
     }
 }

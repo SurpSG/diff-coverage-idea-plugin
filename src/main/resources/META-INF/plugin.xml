@@ -7,14 +7,13 @@
     <br/>
     Diff Coverage plugin:
     <ul>
-    <li> runs `diffCoverage` Gradle task on shortcut `ctrl+shift+d`</li>
     <li> analyzes coverage for uncommitted code</li>
-    <li> highlights coverage for uncommitted code in IDE and shows popup with link to standard <a href="https://github.com/form-com/diff-coverage-gradle#html-report-example">HTML coverage report</a></li>
+    <li> highlights coverage for uncommitted code in IDE</li>
     </ul>
   ]]></description>
 
     <change-notes>Initial release of the plugin.</change-notes>
-    <version>0.0.4</version>
+    <version>1.0.0</version>
 
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->

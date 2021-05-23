@@ -4,11 +4,10 @@
 
 ## [Unreleased]
 ### Added
-- Generate HTML report by Gradle plugin even if Diff Coverage Gradle plugin disables this option
+- Added option to set up min coverage in run configuration
 ### Changed
 - Diff Coverage is run by run configuration instead of shortcut
 ### Fixed
-- Show Diff Coverage report notification if `diffCoverage` Gradle task failed due to violation rules
 - Displaying all packages on code coverage view with checked 'Flatten Packages'
 
 ## [0.0.4]

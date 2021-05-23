@@ -10,7 +10,6 @@ import com.github.surpsg.diffcoverage.domain.gradle.GradleTaskWithInitScript
 import com.github.surpsg.diffcoverage.domain.gradle.RunnableGradleTask
 import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_FAKE_TASK
-import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_TASK
 import com.github.surpsg.diffcoverage.services.CacheService
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -21,15 +20,6 @@ import java.nio.file.Paths
 
 @Service
 class GradleDiffCoverageRunService(private val project: Project) {
-
-    suspend fun runDiffCoverageTask(gradleModule: GradleModule): Boolean {
-        return project.service<GradleService>().executeTaskWithInitScript(
-            GradleTaskWithInitScript(
-                RunnableGradleTask(DIFF_COVERAGE_TASK, gradleModule),
-                createCollectDiffCoverageConfigScript(gradleModule.name)
-            )
-        )
-    }
 
     suspend fun obtainCacheableDiffCoverageInfo(gradleModule: GradleModule): DiffCoverageConfiguration? {
         return project.service<CacheService>().suspendableGetCached {
@@ -47,7 +37,7 @@ class GradleDiffCoverageRunService(private val project: Project) {
                     taskDescription = DiffCoverageBundle.message(DIFF_COVERAGE_COLLECT_INFO),
                     gradleModule = gradleModule
                 ),
-                initScript = createOverrideDiffCoverageReportScript(gradleModule.name)
+                initScript = createCollectDiffCoverageConfigScript(gradleModule.name)
             )
         )
         return if (successfulExecute) {
@@ -86,22 +76,6 @@ class GradleDiffCoverageRunService(private val project: Project) {
                                 "reportsRoot": "$varSign{reportsRoot}"
                             }
                         ""${'"'}
-                    }
-                }
-            }
-            """
-    }
-
-    private fun createOverrideDiffCoverageReportScript(gradlePath: String): String {
-        return """
-            allprojects {
-                afterEvaluate { project ->
-                    if(project.path == '$gradlePath') {
-                        project.diffCoverageReport {
-                            reports {
-                                html = true
-                            }
-                        }
                     }
                 }
             }
