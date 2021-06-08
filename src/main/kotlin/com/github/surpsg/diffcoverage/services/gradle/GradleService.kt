@@ -1,6 +1,5 @@
 package com.github.surpsg.diffcoverage.services.gradle
 
-import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.gradle.GradleTaskWithInitScript
 import com.github.surpsg.diffcoverage.domain.gradle.RunnableGradleTask
 import com.intellij.build.SyncViewManager
@@ -13,12 +12,11 @@ import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
-import kotlinx.coroutines.future.asDeferred
-import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.service.task.GradleTaskManager
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.suspendCoroutine
 
 @Service
 class GradleService(private val project: Project) {
@@ -35,20 +33,9 @@ class GradleService(private val project: Project) {
             )
             putUserData(ExternalSystemRunConfiguration.PROGRESS_LISTENER_KEY, SyncViewManager::class.java)
         }
-        return executeTask(gradleTask.gradleTask, userData)
-    }
-
-    private suspend fun executeTask(
-        gradleTask: RunnableGradleTask,
-        userData: UserDataHolderBase
-    ): Boolean = withContext(BACKGROUND_SCOPE.coroutineContext) {
-        CompletableFuture<Boolean>().apply {
-            executeGradleTask(
-                gradleTask,
-                userData,
-                buildTaskCallbackFromFuture(this)
-            )
-        }.asDeferred().await()
+        return suspendCoroutine {
+            executeGradleTask(gradleTask.gradleTask, userData, continuationToTaskCallback(it))
+        }
     }
 
     private fun executeGradleTask(
@@ -75,13 +62,13 @@ class GradleService(private val project: Project) {
         )
     }
 
-    private fun buildTaskCallbackFromFuture(result: CompletableFuture<Boolean>) = object : TaskCallback {
+    private fun continuationToTaskCallback(continuation: Continuation<Boolean>) = object : TaskCallback {
         override fun onSuccess() {
-            result.complete(true)
+            continuation.resumeWith(Result.success(true))
         }
 
         override fun onFailure() {
-            result.complete(false)
+            continuation.resumeWith(Result.success(false))
         }
     }
 }

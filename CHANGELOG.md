@@ -4,9 +4,11 @@
 
 ## [Unreleased]
 ### Added
+- Keep diff coverage configuration settings per IDE session
 - Added option to set up min coverage in run configuration
 ### Changed
-- Diff Coverage is run by run configuration instead of shortcut
+- Diff Coverage running replaced with run configuration instead of shortcut
+- Removed triggering `diffCoverage` Gradle task
 ### Fixed
 - Displaying all packages on code coverage view with checked 'Flatten Packages'
 

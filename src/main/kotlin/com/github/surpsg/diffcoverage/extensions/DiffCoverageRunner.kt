@@ -5,9 +5,11 @@ import com.github.surpsg.diffcoverage.domain.CoverageStat
 import com.github.surpsg.diffcoverage.domain.ProjectDataWithStat
 import com.github.surpsg.diffcoverage.properties.PLUGIN_NAME
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
+import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
 import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
 import com.intellij.coverage.CoverageSuite
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -29,6 +31,10 @@ class DiffCoverageRunner(
             )
         } catch (e: Exception) {
             LOG.error("Cannot load coverage data", e)
+            project.service<BalloonNotificationService>().notify(
+                notificationType = NotificationType.WARNING,
+                message = DiffCoverageBundle.message("cannot.load.diff.coverage.data", execFilesPaths)
+            )
             ProjectDataWithStat(CoverageStat(emptyMap()))
         }
     }

@@ -10,19 +10,22 @@ import com.github.surpsg.diffcoverage.domain.gradle.GradleTaskWithInitScript
 import com.github.surpsg.diffcoverage.domain.gradle.RunnableGradleTask
 import com.github.surpsg.diffcoverage.properties.DIFF_COVERAGE_COLLECT_INFO
 import com.github.surpsg.diffcoverage.properties.gradle.DIFF_COVERAGE_FAKE_TASK
-import com.github.surpsg.diffcoverage.services.CacheService
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtil
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.nio.file.Paths
 
 @Service
-class GradleDiffCoverageRunService(private val project: Project) {
+class DiffCoverageSettingsService(private val project: Project) {
 
-    suspend fun obtainCacheableDiffCoverageInfo(gradleModule: GradleModule): DiffCoverageConfiguration? {
-        return project.service<CacheService>().suspendableGetCached {
+    suspend fun obtainDiffCoverageSettings(): DiffCoverageConfiguration? {
+        val gradleModule: GradleModule? = project.service<GradleDiffCoverageModuleService>()
+            .lookupDiffCoveragePluginModule()
+        return if (gradleModule == null) {
+            null
+        } else {
             withContext(BACKGROUND_SCOPE.coroutineContext) {
                 collectDiffCoverageInfo(gradleModule)
             }
@@ -30,35 +33,39 @@ class GradleDiffCoverageRunService(private val project: Project) {
     }
 
     private suspend fun collectDiffCoverageInfo(gradleModule: GradleModule): DiffCoverageConfiguration? {
-        val successfulExecute = project.service<GradleService>().executeTaskWithInitScript(
+        val tempDiffSettingsFile = createTemporaryDiffCoverageSettingsFile()
+        val successfulExecute: Boolean = project.service<GradleService>().executeTaskWithInitScript(
             GradleTaskWithInitScript(
                 RunnableGradleTask(
                     taskName = DIFF_COVERAGE_FAKE_TASK,
                     taskDescription = DiffCoverageBundle.message(DIFF_COVERAGE_COLLECT_INFO),
                     gradleModule = gradleModule
                 ),
-                initScript = createCollectDiffCoverageConfigScript(gradleModule.name)
+                initScript = createCollectDiffCoverageConfigScript(gradleModule.name, tempDiffSettingsFile)
             )
         )
         return if (successfulExecute) {
-            val diffInfoJson = getDiffCoverageConfigFile(gradleModule.absolutePath)
-                .readText()
-                .replace("\\", "\\\\")
-            jacksonObjectMapper().readValue<DiffCoverageConfiguration>(diffInfoJson)
+            readDiffCoverageSettingsFromFile(tempDiffSettingsFile)
         } else {
             null
         }
     }
 
-    private fun getDiffCoverageConfigFile(moduleAbsolutePath: String): File {
-        // TODO use some another path outside the project. `.idea`?
-        return Paths.get(moduleAbsolutePath, "build") // TODO extract const property
-            .apply { toFile().mkdir() }
-            .resolve(DIFF_COVERAGE_CONFIG_FILE_NAME)
-            .toFile()
+    private fun readDiffCoverageSettingsFromFile(temporaryDiffCoverageSettingsFile: File): DiffCoverageConfiguration {
+        return jacksonObjectMapper().readValue(
+            temporaryDiffCoverageSettingsFile.readText().escapeBackSlash()
+        )
     }
 
-    private fun createCollectDiffCoverageConfigScript(gradlePath: String): String {
+    private fun createTemporaryDiffCoverageSettingsFile(): File = FileUtil.createTempFile(
+        DIFF_COVERAGE_CONFIG_FILE_NAME, null, true
+    )
+
+    private fun createCollectDiffCoverageConfigScript(
+        gradlePath: String,
+        temporaryDiffCoverageSettingsFile: File
+    ): String {
+        val tempDiffSettingsAbsolutePath = temporaryDiffCoverageSettingsFile.absolutePath.escapeBackSlash()
         val varSign = "$"
         return """
             allprojects {
@@ -67,7 +74,7 @@ class GradleDiffCoverageRunService(private val project: Project) {
                         def execFiles = project.diffCoverageReport.jacocoExecFiles.collect{ '"' + it +'"' }.join(',')
                         def classes = project.diffCoverageReport.classesDirs.collect{ '"' + it +'"' }.join(',')
                         def reportsRoot = project.file(project.diffCoverageReport.reportConfiguration.baseReportDir)
-                        new File(project.buildDir, "$DIFF_COVERAGE_CONFIG_FILE_NAME").write ""${'"'}
+                        new File('$tempDiffSettingsAbsolutePath').write ""${'"'}
                             {
                                 "project": "$varSign{project.name}",
                                 "projectDir": "$varSign{project.projectDir}",
@@ -81,6 +88,8 @@ class GradleDiffCoverageRunService(private val project: Project) {
             }
             """
     }
+
+    private fun String.escapeBackSlash(): String = replace("\\", "\\\\")
 
     private companion object {
         const val DIFF_COVERAGE_CONFIG_FILE_NAME = "diffCoverage.json"

@@ -30,7 +30,7 @@
         <coverageEngine
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
                 order="last"/>
-
+        <applicationService serviceImplementation="com.github.surpsg.diffcoverage.persistent.PersistentDiffCoverageConfigurationSettings"/>
         <configurationType
                 implementation="com.github.surpsg.diffcoverage.runconfiguration.DiffCoverageRunConfigurationType"/>
 
@@ -39,4 +39,9 @@
                            displayType="TOOL_WINDOW"
                            key="diff.coverage.notification.group.name"/>
     </extensions>
+    <projectListeners>
+        <listener class="com.github.surpsg.diffcoverage.listeners.ProjectOpenListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </projectListeners>
+
 </idea-plugin>

@@ -4,10 +4,10 @@ import com.github.surpsg.diffcoverage.DiffCoverageBundle
 import com.github.surpsg.diffcoverage.coroutine.BACKGROUND_SCOPE
 import com.github.surpsg.diffcoverage.domain.CoverageStat
 import com.github.surpsg.diffcoverage.domain.DiffCoverageConfiguration
+import com.github.surpsg.diffcoverage.persistent.DiffPluginInitializationStatus
 import com.github.surpsg.diffcoverage.properties.NOT_GRADLE_PROJECT
 import com.github.surpsg.diffcoverage.services.CoverageVizualizeService
-import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoveragePluginSettingsService
-import com.github.surpsg.diffcoverage.services.gradle.GradleDiffCoverageRunService
+import com.github.surpsg.diffcoverage.services.PersistentDiffCoverageSettingsService
 import com.github.surpsg.diffcoverage.services.gradle.GradleService
 import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
 import com.intellij.execution.ExecutionResult
@@ -19,6 +19,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
 import org.jacoco.core.analysis.ICoverageNode
+import kotlin.math.roundToInt
 
 class DiffCoverageRunProfileState(
     private val project: Project,
@@ -38,15 +39,19 @@ class DiffCoverageRunProfileState(
     }
 
     private fun buildDiffCoverage() = BACKGROUND_SCOPE.launch {
-        val module = project.service<GradleDiffCoveragePluginSettingsService>().lookupDiffCoveragePluginModule()
-            ?: return@launch
-        project.service<GradleDiffCoverageRunService>().obtainCacheableDiffCoverageInfo(module)?.let { coverageInfo ->
-            showCoverageReportNotification(coverageInfo)
+        val (status, diffCoverageSettings) = project.service<PersistentDiffCoverageSettingsService>().loadSettings()
+        when (status) {
+            DiffPluginInitializationStatus.COMPLETE -> buildDiffCoverage(diffCoverageSettings)
+            DiffPluginInitializationStatus.IN_PROGRESS -> notify(
+                NotificationType.INFORMATION,
+                DiffCoverageBundle.message("collect.diff.coverage.info.not.complete")
+            )
+            else -> notify(NotificationType.ERROR, DiffCoverageBundle.message("collect.diff.coverage.info.failed"))
         }
     }
 
-    private fun showCoverageReportNotification(coverageInfo: DiffCoverageConfiguration) {
-        val coverageStat: CoverageStat = project.service<CoverageVizualizeService>().showCoverage(coverageInfo)
+    private fun buildDiffCoverage(diffCoverageInfo: DiffCoverageConfiguration) {
+        val coverageStat: CoverageStat = project.service<CoverageVizualizeService>().showCoverage(diffCoverageInfo)
             ?: return
 
         val coverageHasViolations = getCoverageViolations(coverageStat).values.contains(true)
@@ -91,8 +96,13 @@ class DiffCoverageRunProfileState(
     private fun Double.asPercentsText(): String = if (isNaN()) {
         NOT_AVAILABLE_COVERAGE
     } else {
-        "$this%"
+        "${this.roundToInt()}%"
     }
+
+    private fun notify(type: NotificationType, message: String) = project.service<BalloonNotificationService>().notify(
+        notificationType = type,
+        message = message
+    )
 
     private companion object {
         const val TO_PERCENT_MULTIPLIER = 100

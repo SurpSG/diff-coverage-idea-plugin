@@ -19,7 +19,7 @@ import java.io.File
 import java.nio.file.Paths
 
 @Service
-class GradleDiffCoveragePluginSettingsService(private val project: Project) {
+class GradleDiffCoverageModuleService(private val project: Project) {
 
     fun lookupDiffCoveragePluginModule(): GradleModule? {
         val diffCoverageModule = getDiffCoverageModule() ?: return null
