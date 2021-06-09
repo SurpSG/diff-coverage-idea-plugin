@@ -7,14 +7,13 @@
     <br/>
     Diff Coverage plugin:
     <ul>
-    <li> runs `diffCoverage` Gradle task on shortcut `ctrl+shift+d`</li>
     <li> analyzes coverage for uncommitted code</li>
-    <li> highlights coverage for uncommitted code in IDE and shows popup with link to standard <a href="https://github.com/form-com/diff-coverage-gradle#html-report-example">HTML coverage report</a></li>
+    <li> highlights coverage for uncommitted code in IDE</li>
     </ul>
   ]]></description>
 
     <change-notes>Initial release of the plugin.</change-notes>
-    <version>0.0.4</version>
+    <version>1.0.0</version>
 
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
@@ -22,15 +21,6 @@
     <depends>com.intellij.gradle</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>Coverage</depends>
-
-    <actions>
-        <action id="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction"
-                class="com.github.surpsg.diffcoverage.actions.RunDiffCoverageAction" text="Diff Coverage"
-                description="Diff coverage">
-            <add-to-group group-id="RunTestGroup" anchor="last"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl D"/>
-        </action>
-    </actions>
 
     <extensions defaultExtensionNs="com.intellij">
         <javaCoverageEngineExtension
@@ -40,10 +30,18 @@
         <coverageEngine
                 implementation="com.github.surpsg.diffcoverage.extensions.DiffCoverageEngine"
                 order="last"/>
+        <applicationService serviceImplementation="com.github.surpsg.diffcoverage.persistent.PersistentDiffCoverageConfigurationSettings"/>
+        <configurationType
+                implementation="com.github.surpsg.diffcoverage.runconfiguration.DiffCoverageRunConfigurationType"/>
 
         <notificationGroup id="diff.coverage.notification"
                            bundle="messages.DiffCoverageBundle"
                            displayType="TOOL_WINDOW"
                            key="diff.coverage.notification.group.name"/>
     </extensions>
+    <projectListeners>
+        <listener class="com.github.surpsg.diffcoverage.listeners.ProjectOpenListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </projectListeners>
+
 </idea-plugin>

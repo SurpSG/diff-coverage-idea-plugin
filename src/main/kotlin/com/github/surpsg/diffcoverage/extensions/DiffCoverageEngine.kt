@@ -33,7 +33,7 @@ class DiffCoverageEngine : JavaCoverageEngine() {
             getCoverageAnnotator(project) as JavaCoverageAnnotator,
             project,
             suiteBundle,
-            stateBean
+            CoverageViewManager.StateBean()
         )
     }
 }

@@ -1,31 +1,20 @@
 package com.github.surpsg.diffcoverage.extensions
 
-import com.form.coverage.filters.ModifiedLinesFilter
 import com.github.surpsg.diffcoverage.DiffCoverageBundle
+import com.github.surpsg.diffcoverage.domain.CoverageStat
+import com.github.surpsg.diffcoverage.domain.ProjectDataWithStat
 import com.github.surpsg.diffcoverage.properties.PLUGIN_NAME
 import com.github.surpsg.diffcoverage.services.diff.ModifiedFilesService
+import com.github.surpsg.diffcoverage.services.notifications.BalloonNotificationService
 import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
 import com.intellij.coverage.CoverageSuite
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.rt.coverage.data.LineCoverage
-import com.intellij.rt.coverage.data.LineData
-import com.intellij.rt.coverage.data.ProjectData
-import org.jacoco.core.analysis.Analyzer
-import org.jacoco.core.analysis.CoverageBuilder
-import org.jacoco.core.analysis.ICounter
-import org.jacoco.core.analysis.ICoverageVisitor
-import org.jacoco.core.data.ExecutionDataStore
-import org.jacoco.core.internal.analysis.FilteringAnalyzer
-import org.jacoco.core.tools.ExecFileLoader
 import java.io.File
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.attribute.BasicFileAttributes
 
 class DiffCoverageRunner(
     private val project: Project,
@@ -33,105 +22,22 @@ class DiffCoverageRunner(
     private val execFilesPaths: Set<Path>
 ) : CoverageRunner() {
 
-    override fun loadCoverageData(sessionDataFile: File, baseCoverageSuite: CoverageSuite?): ProjectData {
-        return ProjectData().apply {
-            try {
-                loadExecutionData(this)
-            } catch (e: Exception) {
-                LOG.error(e)
-            }
+    override fun loadCoverageData(sessionDataFile: File, baseCoverageSuite: CoverageSuite?): ProjectDataWithStat {
+        return try {
+            DiffCoverageLoader().loadDiffExecutionData(
+                project.service<ModifiedFilesService>().obtainCodeUpdateInfo(),
+                classesPath,
+                execFilesPaths
+            )
+        } catch (e: Exception) {
+            LOG.error("Cannot load coverage data", e)
+            project.service<BalloonNotificationService>().notify(
+                notificationType = NotificationType.WARNING,
+                message = DiffCoverageBundle.message("cannot.load.diff.coverage.data", execFilesPaths)
+            )
+            ProjectDataWithStat(CoverageStat(emptyMap()))
         }
     }
-
-    private fun loadExecutionData(data: ProjectData) {
-        val coverageBuilder = getCoverageBuilder()
-
-        for (classCoverage in coverageBuilder.classes) {
-            var className = classCoverage.name
-            className = className.replace('\\', '.').replace('/', '.')
-            val classData = data.getOrCreateClassData(className)
-            val lines = arrayOfNulls<LineData>(classCoverage.lastLine + 1)
-            for (method in classCoverage.methods) {
-                val desc = method.name + method.desc
-                for (i in method.firstLine..method.lastLine) {
-                    val methodLine = method.getLine(i)
-                    val methodLineStatus = methodLine.status
-                    if (methodLineStatus == ICounter.EMPTY) continue
-                    val lineData = LineData(i, desc)
-                    when (methodLineStatus) {
-                        ICounter.FULLY_COVERED -> {
-                            lineData.setStatus(LineCoverage.FULL)
-                            lineData.setStatus(LineCoverage.PARTIAL)
-                            lineData.setStatus(LineCoverage.NONE)
-                        }
-                        ICounter.PARTLY_COVERED -> {
-                            lineData.setStatus(LineCoverage.PARTIAL)
-                            lineData.setStatus(LineCoverage.NONE)
-                        }
-                        else -> lineData.setStatus(LineCoverage.NONE)
-                    }
-                    lineData.hits = computeHits(methodLineStatus)
-                    var coveredCount = methodLine.branchCounter.coveredCount
-                    for (b in 0 until methodLine.branchCounter.totalCount) {
-                        val jump = lineData.addJump(b)
-                        if (coveredCount-- > 0) {
-                            jump.trueHits = 1
-                            jump.falseHits = 1
-                        }
-                    }
-                    classData.registerMethodSignature(lineData)
-                    lineData.fillArrays()
-                    lines[i] = lineData
-                }
-            }
-            classData.setLines(lines)
-        }
-    }
-
-    private fun computeHits(methodLineStatus: Int): Int {
-        return if (methodLineStatus == ICounter.FULLY_COVERED || methodLineStatus == ICounter.PARTLY_COVERED) 1 else 0
-    }
-
-    private fun getCoverageBuilder(): CoverageBuilder {
-        return CoverageBuilder().apply {
-            val analyzer = buildAnalyzer(this)
-            val fileVisitor = fileVisitor(analyzer)
-
-            classesPath.forEach {
-                Files.walkFileTree(it, fileVisitor)
-            }
-        }
-    }
-
-    private fun fileVisitor(analyzer: Analyzer) = object : SimpleFileVisitor<Path>() {
-        override fun visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult {
-            try {
-                analyzer.analyzeAll(path.toFile())
-            } catch (e: Exception) {
-                LOG.info(e)
-            }
-            return FileVisitResult.CONTINUE
-        }
-    }
-
-    private fun buildAnalyzer(
-        coverageVisitor: ICoverageVisitor
-    ): FilteringAnalyzer {
-        val codeUpdateInfo = project.service<ModifiedFilesService>().obtainCodeUpdateInfo()
-        return FilteringAnalyzer(
-            loadCoverage(),
-            coverageVisitor,
-            codeUpdateInfo::isInfoExists
-        ) {
-            ModifiedLinesFilter(codeUpdateInfo)
-        }
-    }
-
-    private fun loadCoverage(): ExecutionDataStore = ExecFileLoader().apply {
-        execFilesPaths.forEach {
-            load(it.toFile())
-        }
-    }.executionDataStore
 
     override fun getPresentableName(): String = DiffCoverageBundle.message(PLUGIN_NAME)
 
