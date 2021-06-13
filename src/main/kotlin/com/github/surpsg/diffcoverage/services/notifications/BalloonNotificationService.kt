@@ -2,7 +2,11 @@ package com.github.surpsg.diffcoverage.services.notifications
 
 import com.github.surpsg.diffcoverage.DiffCoverageBundle
 import com.github.surpsg.diffcoverage.properties.PLUGIN_NAME
-import com.intellij.notification.*
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationListener
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 

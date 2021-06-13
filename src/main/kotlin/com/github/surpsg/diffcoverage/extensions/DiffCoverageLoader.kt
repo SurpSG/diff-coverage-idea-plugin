@@ -7,7 +7,12 @@ import com.github.surpsg.diffcoverage.domain.ProjectDataWithStat
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.rt.coverage.data.LineCoverage
 import com.intellij.rt.coverage.data.LineData
-import org.jacoco.core.analysis.*
+import org.jacoco.core.analysis.Analyzer
+import org.jacoco.core.analysis.CoverageBuilder
+import org.jacoco.core.analysis.IBundleCoverage
+import org.jacoco.core.analysis.ICounter
+import org.jacoco.core.analysis.ICoverageNode
+import org.jacoco.core.analysis.ICoverageVisitor
 import org.jacoco.core.data.ExecutionDataStore
 import org.jacoco.core.internal.analysis.FilteringAnalyzer
 import org.jacoco.core.tools.ExecFileLoader

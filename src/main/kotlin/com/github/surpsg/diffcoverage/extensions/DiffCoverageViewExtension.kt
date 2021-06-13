@@ -11,7 +11,11 @@ import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.psi.*
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassOwner
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiPackage
 import com.intellij.psi.search.GlobalSearchScope
 import java.io.File
 import java.nio.file.Paths

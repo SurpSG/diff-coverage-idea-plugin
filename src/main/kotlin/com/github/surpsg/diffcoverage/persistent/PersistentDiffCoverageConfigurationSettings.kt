@@ -8,8 +8,8 @@ import com.intellij.openapi.components.Storage
 import java.util.concurrent.atomic.AtomicReference
 
 @State(name = "diffCoverageConfiguration", storages = [Storage("diffCoverageConfiguration.xml")])
-class PersistentDiffCoverageConfigurationSettings : DiffCoverageConfigurationProvider,
-    PersistentStateComponent<PersistentDiffCoverageConfigurationSettings> {
+class PersistentDiffCoverageConfigurationSettings :
+    DiffCoverageConfigurationProvider, PersistentStateComponent<PersistentDiffCoverageConfigurationSettings> {
     var project: String = ""
     var projectDir: String = ""
     var execFiles: List<String> = emptyList()
