@@ -25,12 +25,14 @@ class DiffCoverageRunConfigurationEditor : SettingsEditor<DiffCoverageRunConfigu
     }
 
     private fun createUIComponents() {
-        minCoverageSpinner = JSpinner(SpinnerNumberModel(
-            DiffCoverageRunConfiguration.DEFAULT_MIN_COVERAGE,
-            MIN_COVERAGE_PERCENTS_VALUE,
-            MAX_COVERAGE_PERCENTS_VALUE,
-            COVERAGE_CHANGE_STEP
-        ))
+        minCoverageSpinner = JSpinner(
+            SpinnerNumberModel(
+                DiffCoverageRunConfiguration.DEFAULT_MIN_COVERAGE,
+                MIN_COVERAGE_PERCENTS_VALUE,
+                MAX_COVERAGE_PERCENTS_VALUE,
+                COVERAGE_CHANGE_STEP
+            )
+        )
     }
 
     override fun createEditor(): JComponent {

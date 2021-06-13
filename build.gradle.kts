@@ -18,7 +18,7 @@ plugins {
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
     id("org.jetbrains.changelog") version "1.1.2"
     // detekt linter - read more: https://detekt.github.io/detekt/gradle.html
-    id("io.gitlab.arturbosch.detekt") version "1.17.1"
+    id("io.gitlab.arturbosch.detekt") version "1.10.0"
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
     id("org.jlleitschuh.gradle.ktlint") version "10.0.0"
 }
@@ -53,11 +53,13 @@ intellij {
 
 //  Plugin Dependencies:
 //  https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html
-    plugins.set(listOf(
-        "com.intellij.java",
-        "com.intellij.gradle",
-        "coverage"
-    ))
+    plugins.set(
+        listOf(
+            "com.intellij.java",
+            "com.intellij.gradle",
+            "coverage"
+        )
+    )
 }
 
 // Configure gradle-changelog-plugin plugin.
