@@ -13,7 +13,7 @@
   ]]></description>
 
     <change-notes>Initial release of the plugin.</change-notes>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <!-- Product and plugin compatibility requirements -->
     <!-- https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->

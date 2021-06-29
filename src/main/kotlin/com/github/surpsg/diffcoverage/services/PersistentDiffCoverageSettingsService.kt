@@ -29,27 +29,31 @@ class PersistentDiffCoverageSettingsService(private val project: Project) {
         }
     }
 
-    suspend fun reloadSettings(): Pair<DiffPluginInitializationStatus, DiffCoverageConfiguration> {
+    suspend fun reloadSettings(
+        silent: Boolean = false
+    ): Pair<DiffPluginInitializationStatus, DiffCoverageConfiguration> {
         return suspendCoroutine {
-            reloadSettingsWhenProjectInitialized(it)
+            reloadSettingsWhenProjectInitialized(silent, it)
         }
     }
 
     private fun reloadSettingsWhenProjectInitialized(
+        silent: Boolean,
         continuation: Continuation<Pair<DiffPluginInitializationStatus, DiffCoverageConfiguration>>
     ) {
         DumbService.getInstance(project).runWhenSmart {
             ExternalProjectsManager.getInstance(project).runWhenInitialized {
-                loadSettingsAsync(continuation)
+                loadSettingsAsync(silent, continuation)
             }
         }
     }
 
     private fun loadSettingsAsync(
+        silent: Boolean,
         continuation: Continuation<Pair<DiffPluginInitializationStatus, DiffCoverageConfiguration>>
     ) = BACKGROUND_SCOPE.launch {
         val configurationProvider = PersistentDiffCoverageConfigurationSettings.getInstance()
-        val diffCoverageSettings = project.service<DiffCoverageSettingsService>().obtainDiffCoverageSettings()
+        val diffCoverageSettings = project.service<DiffCoverageSettingsService>().obtainDiffCoverageSettings(silent)
         val result = if (diffCoverageSettings == null) {
             configurationProvider.setInitializationStatus(DiffPluginInitializationStatus.FAILED)
             DiffPluginInitializationStatus.FAILED to DiffCoverageConfiguration()

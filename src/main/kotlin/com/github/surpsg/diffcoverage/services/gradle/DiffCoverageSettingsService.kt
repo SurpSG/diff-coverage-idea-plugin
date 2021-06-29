@@ -20,9 +20,9 @@ import java.io.File
 @Service
 class DiffCoverageSettingsService(private val project: Project) {
 
-    suspend fun obtainDiffCoverageSettings(): DiffCoverageConfiguration? {
+    suspend fun obtainDiffCoverageSettings(silent: Boolean = false): DiffCoverageConfiguration? {
         val gradleModule: GradleModule? = project.service<GradleDiffCoverageModuleService>()
-            .lookupDiffCoveragePluginModule()
+            .lookupDiffCoveragePluginModule(silent)
         return if (gradleModule == null) {
             null
         } else {

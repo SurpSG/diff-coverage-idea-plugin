@@ -3,6 +3,10 @@
 # diff-coverage-idea-plugin Changelog
 
 ## [Unreleased]
+### Fixed
+- fixed error on project open
+
+## [1.0.0]
 ### Added
 - Keep diff coverage configuration settings per IDE session
 - Added option to set up min coverage in run configuration
