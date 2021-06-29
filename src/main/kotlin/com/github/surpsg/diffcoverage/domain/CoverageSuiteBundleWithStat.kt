@@ -10,11 +10,11 @@ class CoverageSuiteBundleWithStat(suite: CoverageSuite) : CoverageSuitesBundle(s
             .map { it.getCoverageData(null) }
             .map { it as? ProjectDataWithStat }
             .filterNotNull()
-            .first()
-            .apply {
+            .firstOrNull()
+            ?.apply {
                 super.getCoverageData()?.let {
                     merge(it)
                 }
-            }
+            } ?: ProjectDataWithStat(CoverageStat(emptyMap()))
     }
 }
