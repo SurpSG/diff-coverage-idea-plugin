@@ -17,8 +17,12 @@ class BalloonNotificationService(private val project: Project) {
         title: String = DiffCoverageBundle.message(PLUGIN_NAME),
         notificationType: NotificationType = NotificationType.INFORMATION,
         notificationListener: NotificationListener? = null,
-        message: String
+        message: String,
+        silent: Boolean = false
     ) {
+        if (silent) {
+            return
+        }
         Notifications.Bus.notify(
             getNotificationGroup().createNotification(
                 title,
