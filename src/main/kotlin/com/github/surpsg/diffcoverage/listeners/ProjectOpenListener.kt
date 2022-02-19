@@ -38,7 +38,7 @@ class ProjectOpenListener : ProjectManagerListener {
                 super.onSuccess(id)
                 if (id.type == ExternalSystemTaskType.RESOLVE_PROJECT) {
                     BACKGROUND_SCOPE.launch {
-                        project.service<PersistentDiffCoverageSettingsService>().reloadSettings()
+                        project.service<PersistentDiffCoverageSettingsService>().reloadSettings(true)
                     }
                 }
             }

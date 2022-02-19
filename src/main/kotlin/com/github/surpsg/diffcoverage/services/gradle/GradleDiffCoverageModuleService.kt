@@ -21,8 +21,8 @@ import java.nio.file.Paths
 @Service
 class GradleDiffCoverageModuleService(private val project: Project) {
 
-    fun lookupDiffCoveragePluginModule(): GradleModule? {
-        val diffCoverageModule = getDiffCoverageModule() ?: return null
+    fun lookupDiffCoveragePluginModule(silent: Boolean = false): GradleModule? {
+        val diffCoverageModule = getDiffCoverageModule(silent) ?: return null
 
         val rootModulePath = getRootModulePath()
         val diffCoverageModuleKey = normalizeModuleKey(rootModulePath, diffCoverageModule)
@@ -34,10 +34,11 @@ class GradleDiffCoverageModuleService(private val project: Project) {
             ?.let { GradleModule(diffCoverageModule, it.linkedExternalProjectPath) }
     }
 
-    private fun getDiffCoverageModule(): String? {
+    private fun getDiffCoverageModule(silent: Boolean): String? {
         val diffPluginAppliedTo: Map<String, Set<String>> = lookupDiffCoveragePluginModules()
         if (diffPluginAppliedTo.isEmpty() || diffPluginAppliedTo.first().value.isEmpty()) {
             project.service<BalloonNotificationService>().notify(
+                silent = silent,
                 notificationType = NotificationType.ERROR,
                 notificationListener = NotificationListener.URL_OPENING_LISTENER,
                 message = DiffCoverageBundle.message("no.diff.coverage.entries")
@@ -46,6 +47,7 @@ class GradleDiffCoverageModuleService(private val project: Project) {
         }
         if (diffPluginAppliedTo.size > 1 || diffPluginAppliedTo.first().value.size > 1) {
             project.service<BalloonNotificationService>().notify(
+                silent = silent,
                 notificationType = NotificationType.ERROR,
                 message = DiffCoverageBundle.message(
                     "multiple.diff.coverage.entries",
